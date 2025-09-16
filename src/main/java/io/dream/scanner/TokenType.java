@@ -6,13 +6,17 @@ package io.dream.scanner;
 public enum TokenType
 {
     // single character tokens
-    COMMA, SEMICOLON, COLON, LEFT_PAREN, RIGHT_PAREN, LEFT_BRACKET, RIGHT_BRACKET,
+    COMMA, SEMICOLON, COLON,
+    LEFT_PAREN, RIGHT_PAREN,
+    LEFT_BRACKET, RIGHT_BRACKET,
+    BANG,
 
     // one or two character tokens
-    LESS, LESS_OR_EQUAL,
+    LESS, LESS_OR_EQUAL, DIFF,
     GREATER, GREATER_OR_EQUAL,
-    BANG, LESS_GREATER,
-    MINUS, PLUS, SLASH, STAR,
+    MINUS, MINUS_MINUS, PLUS,
+    PLUS_PLUS, SLASH, SLASH_SLASH,
+    STAR, STAR_STAR,
 
     // literals
     IDENTIFIER, INTEGER, DOUBLE, STRING, CHARACTER,
@@ -26,5 +30,5 @@ public enum TokenType
     NIL,
     TABLE,
 
-    OEF
+    EOF
 }
