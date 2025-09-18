@@ -2,8 +2,7 @@ package io.dream.scanner;
 
 import io.dream.Main;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 import static io.dream.scanner.TokenType.*;
 
@@ -18,6 +17,31 @@ public class Scanner
     private int start = 0;
     private int current = 0;
     private int line = 0;
+
+    // set of reserved word by the language.
+    private static final Map<String, TokenType> keywords;
+    static
+    {
+        keywords = new HashMap<>();
+        keywords.put("Algorithme", ALGORITHM);
+        keywords.put("Variables", VARIABLE);
+        keywords.put("Debut", BEGIN);
+        keywords.put("Fin", END);
+        keywords.put("Methode", METHOD);
+        keywords.put("Classe", CLASS);
+        keywords.put("si", IF);
+        keywords.put("sinon", ELSE);
+        keywords.put("pour", FOR);
+        keywords.put("tant-que", WHILE);
+        keywords.put("repeter", DO_WHILE);
+        keywords.put("vrai", TRUE);
+        keywords.put("faux", FALSE);
+        keywords.put("nil", NIL);
+        keywords.put("tableau", TABLE);
+        keywords.put("entier", INTEGER);
+        keywords.put("reel", DOUBLE);
+        keywords.put("chaine_character", STRING);
+    }
 
     /**
      * Instantiates a new Scanner.
@@ -68,7 +92,21 @@ public class Scanner
             case ']': addToken(RIGHT_BRACKET); break;
 
             // double character tokens
-            case '<': addToken(match('=') ?  LESS_OR_EQUAL : LESS); break;
+//            case '<': addToken(match('=') ?  LESS_OR_EQUAL : LESS); break;
+            case '<':
+                if (match('='))
+                {
+                    addToken(LESS_OR_EQUAL);
+                }
+                else if (match('-'))
+                {
+                    addToken(ASSIGN);
+                }
+                else
+                {
+                    addToken(LESS);
+                }
+                break;
             case '>': addToken(match('=') ?  GREATER_OR_EQUAL : GREATER); break;
             case '!': addToken(match('=') ? DIFF : BANG); break;
             case '-': addToken(match('-') ? MINUS_MINUS : MINUS); break;
@@ -99,18 +137,34 @@ public class Scanner
                 break;
 
             // scan strings.
-            case '"': string(); break;
+            case '"': this.string(); break;
 
             default:
-                if (isDigit(c))
+                if (this.isDigit(c))
                 {
-                    number();
-                }
-                else {
+                    this.number();
+                } else if (this.isAlpha(c))
+                {
+                    this.identifier();
+                } else {
                     Main.error(line, "Unsupported character.");
                     break;
                 }
         }
+    }
+
+    /**
+     * this function scan an identifier.
+     * */
+    private void identifier()
+    {
+        while (this.isAlphaNumeric(this.peek())) advance();
+
+        String text = this.source.substring(this.start, this.current);
+        TokenType relatedTokenTypeToText = keywords.get(text);
+        if (relatedTokenTypeToText == null) relatedTokenTypeToText = IDENTIFIER;
+
+        this.addToken(relatedTokenTypeToText);
     }
 
     /**
@@ -133,12 +187,13 @@ public class Scanner
 
         if (isDecimal)
         {
-            this.addToken(DOUBLE, Double.parseDouble(this.source.substring(this.start,
+            this.addToken(DOUBLE_LITERAL, Double.parseDouble(this.source.substring(this.start,
                     this.current).replace(",", ".")));
         }
         else
         {
-            this.addToken(INTEGER, Integer.parseInt(this.source.substring(this.start, this.current)));
+            this.addToken(INTEGER_LITERAL, Integer.parseInt(this.source.substring(this.start,
+                    this.current)));
         }
     }
 
@@ -166,7 +221,7 @@ public class Scanner
         // advance to consume the end '"' character of the string.
         this.advance();
         String string = this.source.substring(start + 1, current - 1);
-        this.addToken(STRING, string);
+        this.addToken(STRING_LITERAL, string);
     }
 
     /**
@@ -245,5 +300,24 @@ public class Scanner
     private boolean isDigit(char ch)
     {
         return ch >= '0' && ch <= '9';
+    }
+
+    /**
+     * This helper function check to see if the character is an alpha character or not.
+     * An identifier start whether with a lowercase letter or an uppercase letter.
+     * @param ch represent the character to check if it is an alpha character.
+     * */
+    private boolean isAlpha(char ch)
+    {
+        return (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || ch == '_';
+    }
+
+    /**
+     * Helper function to check whether a character is a digit or an identifier.
+     * @param ch represent the character to check if it is a character.
+     * */
+    private boolean isAlphaNumeric(char ch)
+    {
+        return isDigit(ch)  || isAlpha(ch);
     }
 }

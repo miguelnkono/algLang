@@ -192,4 +192,17 @@ class ScannerTest
         assertEquals(INTEGER, tokens.get(0).type());
         assertEquals(DOUBLE, tokens.get(1).type());
     }
+
+    @Test
+    void scanIdentifierToken()
+    {
+        var source = "age\nVariables Algorithme";
+        scanner = new Scanner(source);
+        List<Token> tokens = scanner.scanTokens();
+
+        assertEquals(4, tokens.size(), "check the number of tokens");
+        assertEquals(IDENTIFIER, tokens.get(0).type());
+        assertEquals(VARIABLE, tokens.get(1).type());
+        assertEquals(ALGORITHM, tokens.get(2).type());
+    }
 }

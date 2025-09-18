@@ -12,7 +12,7 @@ public enum TokenType
     BANG,
 
     // one or two character tokens
-    LESS, LESS_OR_EQUAL, DIFF,
+    LESS, LESS_OR_EQUAL, DIFF, ASSIGN,
     GREATER, GREATER_OR_EQUAL,
     MINUS, MINUS_MINUS, PLUS,
     PLUS_PLUS, SLASH, SLASH_SLASH,
@@ -30,6 +30,9 @@ public enum TokenType
     TRUE, FALSE,
     NIL,
     TABLE,
+    INTEGER_LITERAL,
+    DOUBLE_LITERAL,
+    STRING_LITERAL,
 
     EOF
 }
