@@ -73,13 +73,115 @@ public class Scanner
             case '!': addToken(match('=') ? DIFF : BANG); break;
             case '-': addToken(match('-') ? MINUS_MINUS : MINUS); break;
             case '+': addToken(match('+') ? PLUS_PLUS : PLUS); break;
-            case '/': addToken(match('/') ? SLASH_SLASH : SLASH); break;
+            case '/':
+                if (match('/'))
+                {
+                    // this is the case when it is a comment.
+                    while (peek() != '\n' && !isAtEnd()) advance();
+                }
+                else
+                {
+                    // in this case it is a division operator.
+                    addToken(SLASH);
+                }
+                break;
             case '*': addToken(match('*') ? STAR_STAR : STAR); break;
+            case '=': addToken(match('=') ? EQUAL_EQUAL : EQUAL);
+
+            // meaningless characters and new line character.
+            case ' ':
+            case '\t':
+            case '\r':
+            case '\\':
+                break;
+            case '\n':
+                this.line++;
+                break;
+
+            // scan strings.
+            case '"': string(); break;
 
             default:
-                Main.error(line, "Unsupported character.");
-                break;
+                if (isDigit(c))
+                {
+                    number();
+                }
+                else {
+                    Main.error(line, "Unsupported character.");
+                    break;
+                }
         }
+    }
+
+    /**
+     * This function scan an integer or a decimal depending on whether the number contains the
+     * comma sign in it or not.
+     * */
+    private void number()
+    {
+        boolean isDecimal = false;
+
+        while (this.isDigit(this.peek())) advance();
+
+        // if decimal is found.
+        if (this.peek() == ',' && this.isDigit(this.peekNext()))
+        {
+            isDecimal = true;
+            advance();
+            while (this.isDigit(this.peek())) advance();
+        }
+
+        if (isDecimal)
+        {
+            this.addToken(DOUBLE, Double.parseDouble(this.source.substring(this.start,
+                    this.current).replace(",", ".")));
+        }
+        else
+        {
+            this.addToken(INTEGER, Integer.parseInt(this.source.substring(this.start, this.current)));
+        }
+    }
+
+    /**
+     * This function scan through a string and construct one.
+     * */
+    private void string()
+    {
+        while (this.peek() != '"' && !this.isAtEnd())
+        {
+            if (this.peek() == '\n')
+            {
+                this.line++;
+            }
+            this.advance();
+        }
+
+        // if we reach the end of the line but did not finish the string.
+        if (this.isAtEnd())
+        {
+            Main.error(line, "Unterminated string literal.");
+            return;
+        }
+
+        // advance to consume the end '"' character of the string.
+        this.advance();
+        String string = this.source.substring(start + 1, current - 1);
+        this.addToken(STRING, string);
+    }
+
+    /**
+     * This function return the current in the source code of the user.
+     * */
+    private char peek()
+    {
+        if (this.isAtEnd()) return '\0';
+        return this.source.charAt(this.current);
+    }
+
+    private char peekNext()
+    {
+        if (this.current + 1 >= this.source.length()) return '\0';
+        return this.source.charAt(this.current + 1);
     }
 
     /**
@@ -134,5 +236,14 @@ public class Scanner
 
         this.current++;
         return true;
+    }
+
+    /**
+     * This helper function check to see if we are in present of a number digit.
+     * @param ch represent the character to check if it is a number or not.
+     * */
+    private boolean isDigit(char ch)
+    {
+        return ch >= '0' && ch <= '9';
     }
 }

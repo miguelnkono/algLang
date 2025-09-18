@@ -6,6 +6,7 @@ import io.dream.scanner.Token;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 
@@ -31,6 +32,11 @@ public class Main
             System.exit(64);
         } else
         {
+            if (!Files.exists(Path.of(args[0])))
+            {
+                System.err.println("File " + args[0] + " does not exists.");
+                System.exit(64);
+            }
             if (args[0].endsWith(".al"))
             {
                 // run the file containing the source of the user.
