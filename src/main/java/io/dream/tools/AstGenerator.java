@@ -43,17 +43,24 @@ public class AstGenerator
         try (PrintWriter writer = new PrintWriter(filePath, StandardCharsets.UTF_8))
         {
             writer.println("package io.dream.ast;\n");   // write the package name
-            writer.println("import java.util.List;\n"); // import some java class : List
+            writer.println("import java.util.List;"); // import some java class : List
             writer.println("import io.dream.scanner.Token;\n"); // import some java class : Token
             writer.println("abstract class " + name + "\n{");
+
+            // define the visitor pattern interface.
+            defineVisitor(writer, name, types);
 
             // we define each subclasses
             for (String type : types)
             {
+                // get the name, the fields of the current and actually define it.
                 String subclassName = type.split(":")[0].trim();
                 String fields = type.split(":")[1].trim();
                 defineType(writer, name, subclassName, fields);
             }
+
+            // define the accept method
+            writer.printf("\tabstract <R> R accept(Visitor<R> visitor);\n");
 
             writer.println("}");
         }
@@ -61,6 +68,28 @@ public class AstGenerator
         {
             System.err.println("File not found: " + filePath);
         }
+    }
+
+    /**
+     * This function define the visitor interface for our interpreter.
+     *
+     * @param writer the object that we use to write into the base name class
+     * @param name which is the name of the base class
+     * @param types which is the types support by the visitor pattern interface and
+     *              implementation.
+     **/
+    private static void defineVisitor(PrintWriter writer, String name, List<String> types)
+    {
+        writer.printf("\tinterface Visitor<R> {\n");
+
+        for (String type : types)
+        {
+            String visitorMethodName = type.split(":")[0].trim();
+            writer.printf("\t\t R visit%s%s (%s %s);\n", visitorMethodName, name,
+                    visitorMethodName, name.toLowerCase());
+        }
+
+        writer.printf("\t}\n\n");
     }
 
     /**
@@ -88,6 +117,12 @@ public class AstGenerator
             writer.printf("            this.%s = %s;\n", name, name);
         }
         writer.println("        }\n");
+
+        // implement the accept method of the visitor pattern interface.
+        writer.printf("\t\t@Override\n");
+        writer.printf("\t\t<R> R accept(Visitor<R> visitor) {\n");
+        writer.printf("\t\t\treturn visitor.visit%s%s(this);\n", subclassName, baseName);
+        writer.printf("\t\t}\n\n");
 
         // fields
         for (String field : fields)
