@@ -3,18 +3,18 @@ package io.dream.ast;
 import java.util.List;
 import io.dream.scanner.Token;
 
-abstract class Expression
+public abstract class Expression
 {
-	interface Visitor<R> {
+	public interface Visitor<R> {
 		 R visitBinaryExpression (Binary expression);
 		 R visitGroupingExpression (Grouping expression);
 		 R visitUnaryExpression (Unary expression);
 		 R visitLiteralExpression (Literal expression);
 	}
 
-    static class Binary extends Expression 
+    public static class Binary extends Expression 
     {
-        Binary (Expression left, Token operator, Expression right)
+        public Binary (Expression left, Token operator, Expression right)
         {
             this.left = left;
             this.operator = operator;
@@ -22,61 +22,61 @@ abstract class Expression
         }
 
 		@Override
-		<R> R accept(Visitor<R> visitor) {
+		public <R> R accept(Visitor<R> visitor) {
 			return visitor.visitBinaryExpression(this);
 		}
 
-        final Expression left;
-        final Token operator;
-        final Expression right;
+		public final Expression left;
+		public final Token operator;
+		public final Expression right;
     }
 
-    static class Grouping extends Expression 
+    public static class Grouping extends Expression 
     {
-        Grouping (Expression expression)
+        public Grouping (Expression expression)
         {
             this.expression = expression;
         }
 
 		@Override
-		<R> R accept(Visitor<R> visitor) {
+		public <R> R accept(Visitor<R> visitor) {
 			return visitor.visitGroupingExpression(this);
 		}
 
-        final Expression expression;
+		public final Expression expression;
     }
 
-    static class Unary extends Expression 
+    public static class Unary extends Expression 
     {
-        Unary (Token operator, Expression expression)
+        public Unary (Token operator, Expression right)
         {
             this.operator = operator;
-            this.expression = expression;
+            this.right = right;
         }
 
 		@Override
-		<R> R accept(Visitor<R> visitor) {
+		public <R> R accept(Visitor<R> visitor) {
 			return visitor.visitUnaryExpression(this);
 		}
 
-        final Token operator;
-        final Expression expression;
+		public final Token operator;
+		public final Expression right;
     }
 
-    static class Literal extends Expression 
+    public static class Literal extends Expression 
     {
-        Literal (Object value)
+        public Literal (Object value)
         {
             this.value = value;
         }
 
 		@Override
-		<R> R accept(Visitor<R> visitor) {
+		public <R> R accept(Visitor<R> visitor) {
 			return visitor.visitLiteralExpression(this);
 		}
 
-        final Object value;
+		public final Object value;
     }
 
-	abstract <R> R accept(Visitor<R> visitor);
+	public abstract <R> R accept(Visitor<R> visitor);
 }

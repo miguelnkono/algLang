@@ -23,7 +23,7 @@ public class AstGenerator
         defineAst(outputDirectory, "Expression", Arrays.asList(
                 "Binary : Expression left, Token operator, Expression right",
                 "Grouping : Expression expression",
-                "Unary : Token operator, Expression expression",
+                "Unary : Token operator, Expression right",
                 "Literal : Object value"
         ));
     }
@@ -45,7 +45,7 @@ public class AstGenerator
             writer.println("package io.dream.ast;\n");   // write the package name
             writer.println("import java.util.List;"); // import some java class : List
             writer.println("import io.dream.scanner.Token;\n"); // import some java class : Token
-            writer.println("abstract class " + name + "\n{");
+            writer.println("public abstract class " + name + "\n{");
 
             // define the visitor pattern interface.
             defineVisitor(writer, name, types);
@@ -60,7 +60,7 @@ public class AstGenerator
             }
 
             // define the accept method
-            writer.printf("\tabstract <R> R accept(Visitor<R> visitor);\n");
+            writer.printf("\tpublic abstract <R> R accept(Visitor<R> visitor);\n");
 
             writer.println("}");
         }
@@ -80,7 +80,7 @@ public class AstGenerator
      **/
     private static void defineVisitor(PrintWriter writer, String name, List<String> types)
     {
-        writer.printf("\tinterface Visitor<R> {\n");
+        writer.printf("\tpublic interface Visitor<R> {\n");
 
         for (String type : types)
         {
@@ -105,10 +105,10 @@ public class AstGenerator
                                    String fieldList)
     {
         // static class Binary extends Expression {}
-        writer.printf("    static class %s extends %s \n    {\n", subclassName, baseName);
+        writer.printf("    public static class %s extends %s \n    {\n", subclassName, baseName);
 
         // Binary (Expression left, Token operator, Expression right){}
-        writer.printf("        %s (%s)\n        {\n", subclassName, fieldList);
+        writer.printf("        public %s (%s)\n        {\n", subclassName, fieldList);
         // the parameters in the constructor of the subclass.
         String[] fields = fieldList.split(", ");
         for (String field : fields)
@@ -120,14 +120,14 @@ public class AstGenerator
 
         // implement the accept method of the visitor pattern interface.
         writer.printf("\t\t@Override\n");
-        writer.printf("\t\t<R> R accept(Visitor<R> visitor) {\n");
+        writer.printf("\t\tpublic <R> R accept(Visitor<R> visitor) {\n");
         writer.printf("\t\t\treturn visitor.visit%s%s(this);\n", subclassName, baseName);
         writer.printf("\t\t}\n\n");
 
         // fields
         for (String field : fields)
         {
-            writer.printf("        final %s;\n", field);
+            writer.printf("\t\tpublic final %s;\n", field);
         }
 
         writer.println("    }\n");
