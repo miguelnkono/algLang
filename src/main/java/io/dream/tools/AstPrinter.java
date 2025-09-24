@@ -55,7 +55,12 @@ public class AstPrinter implements Expression.Visitor<String>
         Expression expression = new Expression.Binary(
                 new Expression.Unary(
                         new Token(TokenType.MINUS, "-", null, 1),
-                        new Expression.Literal(123)
+//                        new Expression.Literal(123)
+                        new Expression.Binary(
+                                new Expression.Literal(123),
+                                new Token(TokenType.PLUS, "+", null, 1),
+                                new Expression.Literal(5)
+                        )
                 ),
                 new Token(TokenType.STAR, "*", null, 1),
                 new Expression.Grouping(new Expression.Literal(45.67))
