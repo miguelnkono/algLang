@@ -1,9 +1,15 @@
 package io.dream;
 
+import io.dream.ast.Expression;
+import io.dream.parser.Parser;
 import io.dream.scanner.Scanner;
 import io.dream.scanner.Token;
+import io.dream.scanner.TokenType;
+import io.dream.tools.AstPrinter;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -26,11 +32,12 @@ public class Main
      */
     public static void main(String[] args) throws IOException
     {
-        if (args.length != 1)
+        if (args.length > 1)
         {
             System.out.format("Usage: algolang <script>.al\n");
             System.exit(64);
-        } else
+        }
+        else if (args.length == 1)
         {
             if (!Files.exists(Path.of(args[0])))
             {
@@ -47,6 +54,31 @@ public class Main
                 System.err.println("Wrong script file");
                 System.exit(64);
             }
+        }
+        else
+        {
+            runPrompt();
+        }
+    }
+
+    private static void runPrompt() throws IOException
+    {
+        InputStreamReader input = new InputStreamReader(System.in);
+        BufferedReader reader = new BufferedReader(input);
+
+        for (;;)
+        {
+            System.out.print("> ");
+            String line = reader.readLine();
+
+            if (line.contentEquals(".exit"))
+            {
+                System.out.println("Goodbye!");
+                break;
+            }
+
+            run(line);
+            hadError = false;
         }
     }
 
@@ -76,10 +108,10 @@ public class Main
         Scanner scanner = new Scanner(script);
         List<Token> tokens = scanner.scanTokens();
 
-        for (Token token : tokens)
-        {
-            System.out.println(token.toString());
-        }
+        Parser parser = new Parser(tokens);
+        Expression expression = parser.parse();
+
+        System.out.println(new AstPrinter().print(expression));
     }
 
     /**
@@ -104,7 +136,7 @@ public class Main
      * */
     private static void report(int line, String where, String message)
     {
-        System.err.format("[line %d ] Error : %s :  %s\n", line, where, message);
+        System.err.format("[ligne %d ] Erreur : %s :  %s\n", line, where, message);
         Main.hadError = true;
     }
 
@@ -118,5 +150,17 @@ public class Main
     public static void error(int line, String message)
     {
         Main.report(line, "", message);
+    }
+
+    public static void error(Token token, String message)
+    {
+        if (token.type() == TokenType.EOF)
+        {
+            report(token.line(), " à la fin", message);
+        }
+        else
+        {
+            report(token.line(), " à '" + token.lexeme() + "'", message);
+        }
     }
 }

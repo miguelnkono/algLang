@@ -177,7 +177,8 @@ class ScannerTest
         List<Token> tokens = scanner.scanTokens();
 
         assertEquals(2, tokens.size(), "test to see if the number of tokens in this list is one.");
-        assertEquals(STRING, tokens.get(0).type(), "check to see if the token scanned is a string" +
+        assertEquals(STRING_LITERAL, tokens.get(0).type(), "check to see if the token scanned is a " +
+                "string" +
                 ".");
     }
 
@@ -189,8 +190,8 @@ class ScannerTest
         List<Token> tokens = scanner.scanTokens();
 
         assertEquals(3, tokens.size(), "test to see if the number of tokens in this list is two.");
-        assertEquals(INTEGER, tokens.get(0).type());
-        assertEquals(DOUBLE, tokens.get(1).type());
+        assertEquals(INTEGER_LITERAL, tokens.get(0).type());
+        assertEquals(DOUBLE_LITERAL, tokens.get(1).type());
     }
 
     @Test

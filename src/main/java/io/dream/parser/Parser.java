@@ -1,5 +1,6 @@
 package io.dream.parser;
 
+import io.dream.Main;
 import io.dream.ast.Expression;
 import io.dream.scanner.Token;
 import io.dream.scanner.TokenType;
@@ -13,6 +14,8 @@ import static io.dream.scanner.TokenType.*;
  */
 public class Parser
 {
+    private static class ParseError extends RuntimeException {}
+
     // the list of all the tokens
     private final List<Token> tokens;
     private int current = 0;
@@ -25,6 +28,23 @@ public class Parser
     public Parser(List<Token> tokens)
     {
         this.tokens = tokens;
+    }
+
+    /**
+     * This is the function that will parse all the code of user of the interpreter.
+     *
+     * @return the head of the ast.
+     * */
+    public Expression parse()
+    {
+        try
+        {
+            return this.expression();
+        }
+        catch (ParseError e)
+        {
+            return null;
+        }
     }
 
     /**
@@ -136,9 +156,9 @@ public class Parser
         if (this.match(NIL)) return new Expression.Literal(null);
 
         // for numbers and strings.
-        if (this.match(STRING, INTEGER, DOUBLE))
+        if (this.match(STRING_LITERAL, INTEGER_LITERAL, DOUBLE_LITERAL))
         {
-            return new Expression.Literal(this.previous().type());
+            return new Expression.Literal(this.previous().literal());
         }
 
         if (this.match(LEFT_PAREN))
@@ -147,6 +167,8 @@ public class Parser
             consume(RIGHT_PAREN, "Attend ')' après l'expression.");
             return new Expression.Grouping(expression);
         }
+
+        throw error(this.peek(), "Attends d'une expression.");
     }
 
     /**
@@ -168,6 +190,60 @@ public class Parser
         }
 
         return false;
+    }
+
+    /**
+     * This is function is going to consume a token, check to see if the token correspond to the
+     * one passed as parameter, and it is, it will consume that otherwise it will report an error
+     * to the user.
+     *
+     * @param tokenType the token type we want to consume.
+     * @param message the message to print to the user if an error occurred.
+     * */
+    private Token consume(TokenType tokenType, String message)
+    {
+        if (this.check(tokenType)) return advance();
+        throw error(this.peek(), message);
+    }
+
+    /**
+     * This function throws an exception to synchronize the error recovering.
+     *
+     * @throws ParseError throws a parseError exception.
+     * */
+    private ParseError error(Token token, String message)
+    {
+        Main.error(token, message);
+        return new ParseError();
+    }
+
+    /**
+     * This function is used to synchronize the error recovery of our interpreter in the compiler
+     * phase of the user's code.
+     * */
+    private void synchronize()
+    {
+        this.advance();
+
+        while (!this.isAtEnd())
+        {
+            if (this.previous().type() == SEMICOLON) return;
+
+            switch (this.peek().type())
+            {
+                case CLASS:
+                case METHOD:
+                case VARIABLE:
+                case ALGORITHM:
+                case BEGIN:
+                case IF:
+                case WHILE:
+                case FOR:
+                    return;
+            }
+
+            this.advance();
+        }
     }
 
     /**
