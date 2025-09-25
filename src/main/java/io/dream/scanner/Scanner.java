@@ -124,7 +124,7 @@ public class Scanner
                 }
                 break;
             case '*': addToken(match('*') ? STAR_STAR : STAR); break;
-            case '=': addToken(match('=') ? EQUAL_EQUAL : EQUAL);
+            case '=': addToken(match('=') ? EQUAL_EQUAL : EQUAL); break;
 
             // meaningless characters and new line character.
             case ' ':

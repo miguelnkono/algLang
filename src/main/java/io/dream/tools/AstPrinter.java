@@ -12,12 +12,14 @@ public class AstPrinter implements Expression.Visitor<String>
     }
 
     @Override
-    public String visitBinaryExpression(Expression.Binary expression) {
+    public String visitBinaryExpression(Expression.Binary expression)
+    {
         return parenthesize(expression.operator.lexeme(), expression.left, expression.right);
     }
 
     @Override
-    public String visitGroupingExpression(Expression.Grouping expression) {
+    public String visitGroupingExpression(Expression.Grouping expression)
+    {
         return parenthesize("group", expression.expression);
     }
 

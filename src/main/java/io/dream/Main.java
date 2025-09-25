@@ -2,6 +2,7 @@ package io.dream;
 
 import io.dream.ast.Expression;
 import io.dream.parser.Parser;
+import io.dream.runtime.RuntimeError;
 import io.dream.scanner.Scanner;
 import io.dream.scanner.Token;
 import io.dream.scanner.TokenType;
@@ -23,6 +24,8 @@ import java.util.List;
 public class Main
 {
     private static boolean hadError = false;
+    private static boolean hadRuntimeError = false;
+    private static Interpreter interpreter = new Interpreter();
 
     /**
      * The entry point of application.
@@ -95,6 +98,7 @@ public class Main
         run(new String(bytes, Charset.defaultCharset()));
 
         if (Main.hadError) System.exit(64);
+        if (Main.hadRuntimeError) System.exit(70);
     }
 
     /**
@@ -111,7 +115,7 @@ public class Main
         Parser parser = new Parser(tokens);
         Expression expression = parser.parse();
 
-        System.out.println(new AstPrinter().print(expression));
+        interpreter.interpret(expression);
     }
 
     /**
@@ -162,5 +166,11 @@ public class Main
         {
             report(token.line(), " à '" + token.lexeme() + "'", message);
         }
+    }
+
+    public static void runtimeError(RuntimeError error)
+    {
+        System.err.println(error.getMessage() + "\n[Ligne " +  error.token().line() +  "]");
+        hadRuntimeError = true;
     }
 }
