@@ -35,21 +35,13 @@ public class Interpreter implements Expression.Visitor<Object>
                 if (left instanceof Double || right instanceof Double) {
                     double leftVal = (left instanceof Double) ? (double) left : (int) left;
                     double rightVal = (right instanceof Double) ? (double) right : (int) right;
-                    switch (expression.operator.type()) {
-                        case GREATER: return leftVal > rightVal;
-                        case GREATER_OR_EQUAL: return leftVal >= rightVal;
-                        case LESS: return leftVal < rightVal;
-                        case LESS_OR_EQUAL: return leftVal <= rightVal;
-                    }
+                    Object leftVal1 = getComparison(expression, leftVal, rightVal);
+                    if (leftVal1 != null) return leftVal1;
                 } else {
                     int leftVal = (int) left;
                     int rightVal = (int) right;
-                    switch (expression.operator.type()) {
-                        case GREATER: return leftVal > rightVal;
-                        case GREATER_OR_EQUAL: return leftVal >= rightVal;
-                        case LESS: return leftVal < rightVal;
-                        case LESS_OR_EQUAL: return leftVal <= rightVal;
-                    }
+                    Object leftVal1 = getComparison(expression, leftVal, rightVal);
+                    if (leftVal1 != null) return leftVal1;
                 }
 
             case EQUAL_EQUAL:
@@ -93,6 +85,17 @@ public class Interpreter implements Expression.Visitor<Object>
         }
 
         return null;
+    }
+
+    private static Object getComparison(Expression.Binary expression, double leftVal, double rightVal)
+    {
+        return switch (expression.operator.type()) {
+            case GREATER -> leftVal > rightVal;
+            case GREATER_OR_EQUAL -> leftVal >= rightVal;
+            case LESS -> leftVal < rightVal;
+            case LESS_OR_EQUAL -> leftVal <= rightVal;
+            default -> null;
+        };
     }
 
     @Override
