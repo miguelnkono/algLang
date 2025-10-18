@@ -60,6 +60,23 @@ class ScannerTest
     }
 
     @Test
+    void scanTokensIndent()
+    {
+      String source = "\tcool";
+      scanner = new Scanner(source);
+      var tokens = scanner.scanTokens();
+
+      // verify the number of tokens returned.
+      assertEquals(3, tokens.size());
+
+      // verify the tokens type and lexeme.
+      assertEquals(INDENT, tokens.get(0).type());
+      assertEquals("\t", tokens.get(0).lexeme());
+      assertEquals(IDENTIFIER, tokens.get(1).type());
+      assertEquals("cool", tokens.get(1).lexeme());
+    }
+
+    @Test
     void scanTokensWithWhitespace()
     {
         var source = " , ; : ( ) [ ] ";

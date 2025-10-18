@@ -6,7 +6,6 @@ import io.dream.runtime.RuntimeError;
 import io.dream.scanner.Scanner;
 import io.dream.scanner.Token;
 import io.dream.scanner.TokenType;
-import io.dream.tools.AstPrinter;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -44,22 +43,25 @@ public class Main
         {
             if (!Files.exists(Path.of(args[0])))
             {
-                System.err.println("File " + args[0] + " does not exists.");
-                System.exit(64);
+              // check to see if the file does exist.
+              System.err.println("File " + args[0] + " does not exists.");
+              System.exit(64);
             }
             if (args[0].endsWith(".al"))
             {
-                // run the file containing the source of the user.
+                // run the file containing the source of the user only if the file ends with the .al extension.
                 runFile(args[0]);
             }
             else
             {
+              // the file does exist, but it is not an algo file.
                 System.err.println("Wrong script file");
                 System.exit(64);
             }
         }
         else
         {
+          // user prefer run the prompt.
             runPrompt();
         }
     }
@@ -114,6 +116,8 @@ public class Main
 
         Parser parser = new Parser(tokens);
         Expression expression = parser.parse();
+
+        // todo: run the type checker here...
 
         interpreter.interpret(expression);
     }

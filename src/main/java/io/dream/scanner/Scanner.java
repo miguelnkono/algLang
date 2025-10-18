@@ -126,9 +126,14 @@ public class Scanner
             case '*': addToken(match('*') ? STAR_STAR : STAR); break;
             case '=': addToken(match('=') ? EQUAL_EQUAL : EQUAL); break;
 
-            // meaningless characters and new line character.
-            case ' ':
+            // This indent token is used to delimite a block.
             case '\t':
+              // todo: for now just produce an indent token...
+              addToken(INDENT);
+              break;
+
+          // meaningless characters and new line character.
+            case ' ':
             case '\r':
             case '\\':
                 break;
