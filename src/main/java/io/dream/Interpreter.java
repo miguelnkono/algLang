@@ -19,6 +19,29 @@ public class Interpreter implements Expression.Visitor<Object>
         }
     }
 
+    private Object evaluate(Expression expression)
+    {
+      return expression.accept(this);
+    }
+
+
+    private String stringify(Object value)
+    {
+      if (value == null) return "nil";
+
+      if (value instanceof Double)
+      {
+        String text = value.toString();
+        if (text.endsWith(".0"))
+        {
+          text = text.substring(0, text.length() - 2);
+        }
+        return text;
+      }
+
+      return value.toString();
+    }
+
     @Override
     public Object visitBinaryExpression(Expression.Binary expression)
     {
@@ -130,11 +153,6 @@ public class Interpreter implements Expression.Visitor<Object>
         return expression.value;
     }
 
-    private Object evaluate(Expression expression)
-    {
-        return expression.accept(this);
-    }
-
     private boolean isTruth(Object value)
     {
         if (value == null) return false;
@@ -164,22 +182,5 @@ public class Interpreter implements Expression.Visitor<Object>
             return;
         }
         throw new RuntimeError(operator, "Les opérateurs doivent tous être des nombres.");
-    }
-
-    private String stringify(Object value)
-    {
-        if (value == null) return "nil";
-
-        if (value instanceof Double)
-        {
-            String text = value.toString();
-            if (text.endsWith(".0"))
-            {
-                text = text.substring(0, text.length() - 2);
-            }
-            return text;
-        }
-
-        return value.toString();
     }
 }
