@@ -14,12 +14,20 @@ public class AtomicType implements Type
   @Override
   public boolean equals(Type other)
   {
+    if (this == other)
+    {
+      return true;
+    }
+
+//    if (!(other instanceof  AtomicTypes)) return false;
+
     if (other == null)
     {
       return false;
     }
 
-    return this == other;
+    AtomicType that = (AtomicType) other;
+    return this.name.equals(that.name);
   }
 
   @Override

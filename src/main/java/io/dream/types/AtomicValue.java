@@ -23,9 +23,4 @@ public class AtomicValue<T> implements Value
     return String.format("%s (%s)", this.value, this.type);
   }
 
-  public static void main(String[] args)
-  {
-    AtomicValue<Void> atomic = new AtomicValue<>(null, AtomicTypes.VOID);
-    System.out.println(atomic.getType());
-  }
 }
