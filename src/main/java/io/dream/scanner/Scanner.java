@@ -1,8 +1,12 @@
 package io.dream.scanner;
 
 import io.dream.Main;
+import io.dream.types.*;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import static io.dream.scanner.TokenType.*;
 
@@ -192,13 +196,17 @@ public class Scanner
 
         if (isDecimal)
         {
-            this.addToken(DOUBLE_LITERAL, Double.parseDouble(this.source.substring(this.start,
-                    this.current).replace(",", ".")));
+          double doubleValue = Double.parseDouble(this.source.substring(this.start, this.current).replace(",", "."));
+          AtomicValue<Double> doubleAtomicValue = new AtomicValue<>(doubleValue, AtomicTypes.FLOATING);
+            this.addToken(DOUBLE_LITERAL, doubleAtomicValue);
         }
         else
         {
-            this.addToken(INTEGER_LITERAL, Integer.parseInt(this.source.substring(this.start,
-                    this.current)));
+
+          int integerValue = Integer.parseInt(this.source.substring(this.start,
+              this.current));
+          AtomicValue<Integer> integerAtomicValue = new AtomicValue<>(integerValue, AtomicTypes.INTEGER);
+          this.addToken(INTEGER_LITERAL, integerAtomicValue);
         }
     }
 
@@ -226,7 +234,8 @@ public class Scanner
         // advance to consume the end '"' character of the string.
         this.advance();
         String string = this.source.substring(start + 1, current - 1);
-        this.addToken(STRING_LITERAL, string);
+        AtomicValue<String> stringAtomicValue = new AtomicValue<>(string, AtomicTypes.STRING);
+        this.addToken(STRING_LITERAL, stringAtomicValue);
     }
 
     /**
@@ -258,7 +267,7 @@ public class Scanner
      * This function adds a new token in the tokens list.
      * The token it adds has a literal set.
      * */
-    private void addToken(TokenType type, Object literal)
+    private void addToken(TokenType type, Value literal)
     {
         String text = this.source.substring(this.start, this.current);
         this.tokens.add(new Token(type, text, literal, this.line));

@@ -1,5 +1,7 @@
 package io.dream.scanner;
 
+import io.dream.types.Value;
+
 /**
  * The type Token.
  *
@@ -8,7 +10,7 @@ package io.dream.scanner;
  * @param literal the runtime representation of the token if there is any
  * @param line the line where the token was found
  */
-public record Token (TokenType type, String lexeme, Object literal, int line)
+public record Token (TokenType type, String lexeme, Value literal, int line)
 {
 
     @Override
