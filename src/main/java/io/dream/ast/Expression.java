@@ -1,7 +1,8 @@
 package io.dream.ast;
 
-import java.util.List;
 import io.dream.scanner.Token;
+import io.dream.types.Type;
+import io.dream.types.Value;
 
 public abstract class Expression
 {
@@ -65,18 +66,30 @@ public abstract class Expression
 
     public static class Literal extends Expression 
     {
-        public Literal (Object value)
-        {
-            this.value = value;
-        }
+      public Literal (Value value)
+      {
+          this.value = value;
+      }
 
-		@Override
-		public <R> R accept(Visitor<R> visitor) {
-			return visitor.visitLiteralExpression(this);
-		}
+      @Override
+      public <R> R accept(Visitor<R> visitor) {
+        return visitor.visitLiteralExpression(this);
+      }
 
-		public final Object value;
+      public final Value value;
     }
 
-	public abstract <R> R accept(Visitor<R> visitor);
+    private Type type;
+
+  public Type getType()
+  {
+    return type;
+  }
+
+  public void setType(Type type)
+  {
+    this.type = type;
+  }
+
+  public abstract <R> R accept(Visitor<R> visitor);
 }

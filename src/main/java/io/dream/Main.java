@@ -1,11 +1,12 @@
 package io.dream;
 
 import io.dream.ast.Expression;
+import io.dream.error.RuntimeError;
 import io.dream.parser.Parser;
-import io.dream.runtime.RuntimeError;
 import io.dream.scanner.Scanner;
 import io.dream.scanner.Token;
 import io.dream.scanner.TokenType;
+import io.dream.types.Checker;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -118,8 +119,20 @@ public class Main
         Expression expression = parser.parse();
 
         // todo: run the type checker here...
+        if (!hadError) {
+          try {
+            Checker typeChecker = new Checker();
+            typeChecker.check(expression);
+          } catch (Exception e) {
+            System.err.println("Erreur de type: " + e.getMessage());
+            hadError = true;
+            return;
+          }
+        }
 
-        interpreter.interpret(expression);
+        if (!hadError) {
+          interpreter.interpret(expression);
+        }
     }
 
     /**

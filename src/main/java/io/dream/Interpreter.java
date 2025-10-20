@@ -1,186 +1,206 @@
 package io.dream;
 
 import io.dream.ast.Expression;
-import io.dream.runtime.RuntimeError;
+import io.dream.error.RuntimeError;
 import io.dream.scanner.Token;
+import io.dream.types.*;
 
 public class Interpreter implements Expression.Visitor<Object>
 {
-    public void interpret(Expression expression)
+  private final Checker typeChecker;
+
+  public Interpreter() {
+    this.typeChecker = new Checker();
+  }
+
+  public void interpret(Expression expression)
+  {
+    try
     {
-        try
-        {
-            Object result = this.evaluate(expression);
-            System.out.println(this.stringify(result));
-        }
-        catch (RuntimeError re)
-        {
-            Main.runtimeError(re);
-        }
+      // First, type check the expression
+      Expression typedExpression = typeChecker.check(expression);
+
+      // Then evaluate it
+      Object result = this.evaluate(typedExpression);
+      System.out.println(this.stringify(result));
     }
-
-    private Object evaluate(Expression expression)
+    catch (RuntimeError re)
     {
-      return expression.accept(this);
+      Main.runtimeError(re);
     }
+  }
+
+  private Object evaluate(Expression expression)
+  {
+    return expression.accept(this);
+  }
 
 
-    private String stringify(Object value)
+  private String stringify(Object value)
+  {
+    if (value == null) return "nil";
+
+    if (value instanceof Double)
     {
-      if (value == null) return "nil";
-
-      if (value instanceof Double)
+      String text = value.toString();
+      if (text.endsWith(".0"))
       {
-        String text = value.toString();
-        if (text.endsWith(".0"))
-        {
-          text = text.substring(0, text.length() - 2);
-        }
-        return text;
+        text = text.substring(0, text.length() - 2);
       }
-
-      return value.toString();
+      return text;
     }
 
-    @Override
-    public Object visitBinaryExpression(Expression.Binary expression)
+    return value.toString();
+  }
+
+  @Override
+  public Object visitBinaryExpression(Expression.Binary expression)
+  {
+    Object left = this.evaluate(expression.left);
+    Object right = this.evaluate(expression.right);
+
+    // Use the type information from the type checker
+    Type exprType = expression.getType();
+
+    switch (expression.operator.type())
     {
-        Object left = this.evaluate(expression.left);
-        Object right = this.evaluate(expression.right);
-
-        switch (expression.operator.type())
-        {
-            case GREATER:
-            case GREATER_OR_EQUAL:
-            case LESS:
-            case LESS_OR_EQUAL:
-                this.checkNumberOperands(expression.operator, left, right);
-                if (left instanceof Double || right instanceof Double) {
-                    double leftVal = (left instanceof Double) ? (double) left : (int) left;
-                    double rightVal = (right instanceof Double) ? (double) right : (int) right;
-                    Object leftVal1 = getComparison(expression, leftVal, rightVal);
-                    if (leftVal1 != null) return leftVal1;
-                } else {
-                    int leftVal = (int) left;
-                    int rightVal = (int) right;
-                    Object leftVal1 = getComparison(expression, leftVal, rightVal);
-                    if (leftVal1 != null) return leftVal1;
-                }
-
-            case EQUAL_EQUAL:
-                return this.isEqual(left, right);
-            case DIFF:
-                return !this.isEqual(left, right);
-
-            case MINUS:
-                this.checkNumberOperands(expression.operator, left, right);
-                if (left instanceof Double || right instanceof Double) {
-                    return ((Number) left).doubleValue() - ((Number) right).doubleValue();
-                }
-                return (int) left - (int) right;
-
-            case SLASH:
-                this.checkNumberOperands(expression.operator, left, right);
-                if (left instanceof Double || right instanceof Double) {
-                    return ((Number) left).doubleValue() / ((Number) right).doubleValue();
-                }
-                return (int) left / (int) right;
-
-            case STAR:
-                this.checkNumberOperands(expression.operator, left, right);
-                if (left instanceof Double || right instanceof Double) {
-                    return ((Number) left).doubleValue() * ((Number) right).doubleValue();
-                }
-                return (int) left * (int) right;
-
-            case PLUS:
-                if (left instanceof String && right instanceof String) {
-                    return (String) left + (String) right;
-                }
-                if (left instanceof Number && right instanceof Number) {
-                    if (left instanceof Double || right instanceof Double) {
-                        return ((Number) left).doubleValue() + ((Number) right).doubleValue();
-                    }
-                    return (int) left + (int) right;
-                }
-                throw new RuntimeError(expression.operator,
-                        "Les opérateurs doivent tous être des nombres ou des chaînes de caractères.");
+      case GREATER:
+      case GREATER_OR_EQUAL:
+      case LESS:
+      case LESS_OR_EQUAL:
+        this.checkNumberOperands(expression.operator, left, right);
+        if (exprType.equals(TypeFactory.INTEGER)) {
+          int leftVal = (int) left;
+          int rightVal = (int) right;
+          return getComparison(expression, (double)leftVal, (double)rightVal);
+        } else {
+          double leftVal = (double) left;
+          double rightVal = (double) right;
+          return getComparison(expression, leftVal, rightVal);
         }
 
-        return null;
-    }
+      case EQUAL_EQUAL:
+        return this.isEqual(left, right);
+      case DIFF:
+        return !this.isEqual(left, right);
 
-    private static Object getComparison(Expression.Binary expression, double leftVal, double rightVal)
-    {
-        return switch (expression.operator.type()) {
-            case GREATER -> leftVal > rightVal;
-            case GREATER_OR_EQUAL -> leftVal >= rightVal;
-            case LESS -> leftVal < rightVal;
-            case LESS_OR_EQUAL -> leftVal <= rightVal;
-            default -> null;
-        };
-    }
-
-    @Override
-    public Object visitGroupingExpression(Expression.Grouping expression)
-    {
-        return evaluate(expression.expression);
-    }
-
-    @Override
-    public Object visitUnaryExpression(Expression.Unary expression)
-    {
-        Object right = this.evaluate(expression.right);
-
-        switch (expression.operator.type())
-        {
-            case MINUS:
-                this.checkNumberOperand(expression.operator, right);
-                if (right instanceof Double) {
-                    return -(double) right;
-                }
-                return -(int) right;
-            case BANG:
-                return !this.isTruth(right);
+      case MINUS:
+        this.checkNumberOperands(expression.operator, left, right);
+        if (exprType.equals(TypeFactory.INTEGER)) {
+          return (int) left - (int) right;
+        } else {
+          return (double) left - (double) right;
         }
 
-        return null;
-    }
+      case SLASH:
+        this.checkNumberOperands(expression.operator, left, right);
+        if (exprType.equals(TypeFactory.INTEGER)) {
+          return (int) left / (int) right;
+        } else {
+          return (double) left / (double) right;
+        }
 
-    @Override
-    public Object visitLiteralExpression(Expression.Literal expression)
-    {
-        return expression.value;
-    }
+      case STAR:
+        this.checkNumberOperands(expression.operator, left, right);
+        if (exprType.equals(TypeFactory.INTEGER)) {
+          return (int) left * (int) right;
+        } else {
+          return (double) left * (double) right;
+        }
 
-    private boolean isTruth(Object value)
-    {
-        if (value == null) return false;
-        if (value instanceof Boolean) return (boolean) value;
-        return true;
-    }
-
-    private boolean isEqual(Object left, Object right)
-    {
-        if (left == null && right == null) return true;
-        if (left == null || right == null) return false;
-        return left.equals(right);
-    }
-
-    private void checkNumberOperand(Token operator, Object operand)
-    {
-        if (!(operand instanceof Number))
-        {
-            throw new RuntimeError(operator, "L'opérateur doit être un nombre");
+      case PLUS:
+        if (exprType.equals(TypeFactory.STRING)) {
+          return (String) left + (String) right;
+        } else if (exprType.equals(TypeFactory.INTEGER)) {
+          return (int) left + (int) right;
+        } else {
+          return (double) left + (double) right;
         }
     }
 
-    private void checkNumberOperands(Token operator, Object left, Object right)
+    return null;
+  }
+
+  private static Object getComparison(Expression.Binary expression, double leftVal, double rightVal)
+  {
+    return switch (expression.operator.type()) {
+      case GREATER -> leftVal > rightVal;
+      case GREATER_OR_EQUAL -> leftVal >= rightVal;
+      case LESS -> leftVal < rightVal;
+      case LESS_OR_EQUAL -> leftVal <= rightVal;
+      default -> null;
+    };
+  }
+
+  @Override
+  public Object visitGroupingExpression(Expression.Grouping expression)
+  {
+    return evaluate(expression.expression);
+  }
+
+  @Override
+  public Object visitUnaryExpression(Expression.Unary expression)
+  {
+    Object right = this.evaluate(expression.right);
+
+    // Use the type information from the type checker
+    Type exprType = expression.getType();
+
+    switch (expression.operator.type())
     {
-        if (left instanceof Number && right instanceof Number)
-        {
-            return;
+      case MINUS:
+        this.checkNumberOperand(expression.operator, right);
+        if (exprType.equals(TypeFactory.INTEGER)) {
+          return -(int) right;
+        } else {
+          return -(double) right;
         }
-        throw new RuntimeError(operator, "Les opérateurs doivent tous être des nombres.");
+      case BANG:
+        return !this.isTruth(right);
     }
+
+    return null;
+  }
+
+  @Override
+  public Object visitLiteralExpression(Expression.Literal expression)
+  {
+    // Extract value from AtomicValue
+    if (expression.value instanceof AtomicValue) {
+      AtomicValue<?> atomicValue = (AtomicValue<?>) expression.value;
+      return atomicValue.getValue();
+    }
+    return expression.value;
+  }
+
+  private boolean isTruth(Object value)
+  {
+    if (value == null) return false;
+    if (value instanceof Boolean) return (boolean) value;
+    return true;
+  }
+
+  private boolean isEqual(Object left, Object right)
+  {
+    if (left == null && right == null) return true;
+    if (left == null || right == null) return false;
+    return left.equals(right);
+  }
+
+  private void checkNumberOperand(Token operator, Object operand)
+  {
+    if (!(operand instanceof Number))
+    {
+      throw new RuntimeError(operator, "L'opérateur doit être un nombre");
+    }
+  }
+
+  private void checkNumberOperands(Token operator, Object left, Object right)
+  {
+    if (left instanceof Number && right instanceof Number)
+    {
+      return;
+    }
+    throw new RuntimeError(operator, "Les opérateurs doivent tous être des nombres.");
+  }
 }

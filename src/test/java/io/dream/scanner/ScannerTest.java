@@ -62,7 +62,7 @@ class ScannerTest
     @Test
     void scanTokensIndent()
     {
-      String source = "\tcool";
+      String source = "\tcool\n\t\n";
       scanner = new Scanner(source);
       var tokens = scanner.scanTokens();
 
@@ -74,6 +74,8 @@ class ScannerTest
       assertEquals("\t", tokens.get(0).lexeme());
       assertEquals(IDENTIFIER, tokens.get(1).type());
       assertEquals("cool", tokens.get(1).lexeme());
+      assertEquals(EOF, tokens.get(2).type());
+      assertEquals("nil", tokens.get(2).lexeme());
     }
 
     @Test

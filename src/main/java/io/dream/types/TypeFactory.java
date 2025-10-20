@@ -2,11 +2,15 @@ package io.dream.types;
 
 public class TypeFactory
 {
-  /***
-   * This function will return the AtomicType corresponding to the given AtomicTypes enum.
-   * @param atomicType AtomicTypes enum.
-   * @return AtomicType.
-   * */
+
+  // Pre-defined type constants for easy access
+  public static final AtomicType INTEGER = (AtomicType) getAtomicType(AtomicTypes.INTEGER);
+  public static final AtomicType FLOATING = (AtomicType) getAtomicType(AtomicTypes.FLOATING);
+  public static final AtomicType STRING = (AtomicType) getAtomicType(AtomicTypes.STRING);
+  public static final AtomicType CHAR = (AtomicType) getAtomicType(AtomicTypes.CHAR);
+  public static final AtomicType BOOLEAN = (AtomicType) getAtomicType(AtomicTypes.BOOLEAN);
+  public static final AtomicType VOID = (AtomicType) getAtomicType(AtomicTypes.VOID);
+
   public static Type getAtomicType(AtomicTypes atomicType)
   {
     return switch (atomicType)
@@ -19,5 +23,11 @@ public class TypeFactory
       case VOID -> new AtomicType("nil", null);
       default -> throw new IllegalArgumentException("Type basique non reconnu: " + atomicType);
     };
+  }
+
+  // Helper to check if a type is numeric
+  public static boolean isNumeric(Type type)
+  {
+    return type.equals(INTEGER) || type.equals(FLOATING);
   }
 }

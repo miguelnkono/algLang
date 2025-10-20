@@ -4,6 +4,8 @@ import io.dream.Main;
 import io.dream.ast.Expression;
 import io.dream.scanner.Token;
 import io.dream.scanner.TokenType;
+import io.dream.types.AtomicTypes;
+import io.dream.types.AtomicValue;
 
 import java.util.List;
 
@@ -151,9 +153,9 @@ public class Parser
 
     private Expression primary()
     {
-        if (this.match(FALSE)) return new Expression.Literal(false);
-        if (this.match(TRUE)) return new Expression.Literal(true);
-        if (this.match(NIL)) return new Expression.Literal(null);
+        if (this.match(FALSE)) return new Expression.Literal(new AtomicValue<Boolean>(false, AtomicTypes.BOOLEAN));
+        if (this.match(TRUE)) return new Expression.Literal(new AtomicValue<Boolean>(true, AtomicTypes.BOOLEAN));
+        if (this.match(NIL)) return new Expression.Literal(new AtomicValue<Void>(null, AtomicTypes.VOID));
 
         // for numbers and strings.
         if (this.match(STRING_LITERAL, INTEGER_LITERAL, DOUBLE_LITERAL))

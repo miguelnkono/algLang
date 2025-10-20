@@ -74,7 +74,7 @@ public class Scanner
         }
 
         // at the end of the token list we add an EOF token to mark it done
-        this.tokens.add(new Token(EOF, "", null, this.line));
+        this.tokens.add(new Token(EOF, "nil", null, this.line));
         return this.tokens;
     }
 
@@ -130,10 +130,13 @@ public class Scanner
             case '*': addToken(match('*') ? STAR_STAR : STAR); break;
             case '=': addToken(match('=') ? EQUAL_EQUAL : EQUAL); break;
 
-            // This indent token is used to delimite a block.
+            // This indent token is used to delimit a block.
             case '\t':
-              // todo: for now just produce an indent token...
-              addToken(INDENT);
+              // produce an INDENT token when the indentation is not followed by a new line.
+              if (this.peek() != '\n' && this.peek() != ' ' && this.peek() != '\r')
+              {
+                addToken(INDENT);
+              }
               break;
 
           // meaningless characters and new line character.

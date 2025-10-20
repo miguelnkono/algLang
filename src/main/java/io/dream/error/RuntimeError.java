@@ -1,4 +1,4 @@
-package io.dream.runtime;
+package io.dream.error;
 
 import io.dream.scanner.Token;
 

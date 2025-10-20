@@ -3,6 +3,8 @@ package io.dream.tools;
 import io.dream.ast.Expression;
 import io.dream.scanner.Token;
 import io.dream.scanner.TokenType;
+import io.dream.types.AtomicTypes;
+import io.dream.types.AtomicValue;
 
 public class AstPrinter implements Expression.Visitor<String>
 {
@@ -59,13 +61,13 @@ public class AstPrinter implements Expression.Visitor<String>
                         new Token(TokenType.MINUS, "-", null, 1),
 //                        new Expression.Literal(123)
                         new Expression.Binary(
-                                new Expression.Literal(123),
+                                new Expression.Literal(new AtomicValue<Integer>(22, AtomicTypes.INTEGER)),
                                 new Token(TokenType.PLUS, "+", null, 1),
-                                new Expression.Literal(5)
+                                new Expression.Literal(new AtomicValue<Integer>(5, AtomicTypes.INTEGER))
                         )
                 ),
                 new Token(TokenType.STAR, "*", null, 1),
-                new Expression.Grouping(new Expression.Literal(45.67))
+                new Expression.Grouping(new Expression.Literal(new AtomicValue<Double>(45.67, AtomicTypes.FLOATING)))
         );
 
         System.out.println(new AstPrinter().print(expression));
