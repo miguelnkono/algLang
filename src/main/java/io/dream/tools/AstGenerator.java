@@ -24,7 +24,7 @@ public class AstGenerator
                 "Binary : Expression left, Token operator, Expression right",
                 "Grouping : Expression expression",
                 "Unary : Token operator, Expression right",
-                "Literal : Object value"
+                "Literal : Value value"
         ));
     }
 
@@ -32,10 +32,11 @@ public class AstGenerator
      * Create a new file in the output directory with a given name and containing all the
      * subclasses that will construct the ast tree.
      *
-     * @param outputDirectory  the name of the directory where the "name" tree will be created.
-     * @param name represent the name of the parent class for all the subclasses for the tree.
-     * @param types the description of the of each types present in the tree.
-     * */
+     * @param outputDirectory the name of the directory where the "name" tree will be created.
+     * @param name            represent the name of the parent class for all the subclasses for the tree.
+     * @param types           the description of the of each types present in the tree.
+     *
+     */
     private static void defineAst(String outputDirectory, String name, List<String> types) throws IOException
     {
         String filePath = outputDirectory + "/" + name + ".java";
@@ -44,6 +45,8 @@ public class AstGenerator
         {
             writer.println("package io.dream.ast;\n");   // write the package name
             writer.println("import java.util.List;"); // import some java class : List
+            writer.println("import io.dream.types.Type;");
+            writer.println("import io.dream.types.Value;");
             writer.println("import io.dream.scanner.Token;\n"); // import some java class : Token
             writer.println("public abstract class " + name + "\n{");
 
@@ -59,12 +62,27 @@ public class AstGenerator
                 defineType(writer, name, subclassName, fields);
             }
 
+            // add the type of the expression
+            // private Type type;
+            //
+            //    public Type getType()
+            //    {
+            //        return type;
+            //    }
+            //
+            //    public void setType(Type type)
+            //    {
+            //        this.type = type;
+            //    }
+            writer.printf("\tprivate Type type;\n\n");
+            writer.printf("\tpublic Type getType()\n\t{\n\t\treturn type;\n\t}\n\n");
+            writer.print("\tpublic void setType(Type type)\n\t{\n\t\tthis.type = type;\n\t}\n\n");
+
             // define the accept method
             writer.printf("\tpublic abstract <R> R accept(Visitor<R> visitor);\n");
 
             writer.println("}");
-        }
-        catch (FileNotFoundException e)
+        } catch (FileNotFoundException e)
         {
             System.err.println("File not found: " + filePath);
         }
@@ -74,9 +92,9 @@ public class AstGenerator
      * This function define the visitor interface for our interpreter.
      *
      * @param writer the object that we use to write into the base name class
-     * @param name which is the name of the base class
-     * @param types which is the types support by the visitor pattern interface and
-     *              implementation.
+     * @param name   which is the name of the base class
+     * @param types  which is the types support by the visitor pattern interface and
+     *               implementation.
      **/
     private static void defineVisitor(PrintWriter writer, String name, List<String> types)
     {
@@ -96,11 +114,12 @@ public class AstGenerator
      * This is the function that will actually define the subclasses of the base class with all
      * of its fields.
      *
-     * @param writer the writer pointer that will allow us to write into the baseName file.
-     * @param baseName the base name on which all the subclasses will inherit from.
+     * @param writer       the writer pointer that will allow us to write into the baseName file.
+     * @param baseName     the base name on which all the subclasses will inherit from.
      * @param subclassName the name of the base class that will inherit the base class.
-     * @param fieldList the fields of the subclass.
-     * */
+     * @param fieldList    the fields of the subclass.
+     *
+     */
     private static void defineType(PrintWriter writer, String baseName, String subclassName,
                                    String fieldList)
     {
