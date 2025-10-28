@@ -34,7 +34,7 @@ public enum TokenType
     DOUBLE_LITERAL,
     STRING_LITERAL,
 
-  // ambiguous
-  INDENT,
+    // ambiguous
+    INDENT,
     EOF
 }
