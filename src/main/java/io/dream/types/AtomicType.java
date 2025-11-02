@@ -19,7 +19,7 @@ public class AtomicType implements Type
             return true;
         }
 
-//    if (!(other instanceof  AtomicTypes)) return false;
+//    if ((other instanceof  AtomicTypes)) return false;
 
         if (other == null)
         {

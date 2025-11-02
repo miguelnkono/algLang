@@ -62,18 +62,6 @@ public class AstGenerator
                 defineType(writer, name, subclassName, fields);
             }
 
-            // add the type of the expression
-            // private Type type;
-            //
-            //    public Type getType()
-            //    {
-            //        return type;
-            //    }
-            //
-            //    public void setType(Type type)
-            //    {
-            //        this.type = type;
-            //    }
             writer.printf("\tprivate Type type;\n\n");
             writer.printf("\tpublic Type getType()\n\t{\n\t\treturn type;\n\t}\n\n");
             writer.print("\tpublic void setType(Type type)\n\t{\n\t\tthis.type = type;\n\t}\n\n");

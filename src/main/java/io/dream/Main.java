@@ -25,7 +25,8 @@ public class Main
 {
     private static boolean hadError = false;
     private static boolean hadRuntimeError = false;
-    private static Interpreter interpreter = new Interpreter();
+//    private static Interpreter interpreter = new Interpreter();
+    private static TypeSafeInterpreter interpreter = new TypeSafeInterpreter();
 
     /**
      * The entry point of application.
@@ -35,12 +36,12 @@ public class Main
      */
     public static void main(String[] args) throws IOException
     {
-        if (args.length > 1)
+        if (args.length > 2)
         {
             System.out.format("Usage: algolang <script>.al\n");
             System.exit(64);
         }
-        else if (args.length == 1)
+        else if (args.length == 2)
         {
             if (!Files.exists(Path.of(args[0])))
             {
@@ -63,6 +64,7 @@ public class Main
         else
         {
           // user prefer run the prompt.
+            System.out.println(args.length);
             runPrompt();
         }
     }
