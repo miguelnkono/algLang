@@ -11,4 +11,4 @@
 // Fin
 
 Ecrire("cool" + " 2");
-//2 + 2;
+Ecrire(2 + 2);
