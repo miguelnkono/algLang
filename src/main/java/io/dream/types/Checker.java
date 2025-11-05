@@ -1,10 +1,10 @@
 package io.dream.types;
 
-import io.dream.ast.Expression;
+import io.dream.ast.Expr;
 import io.dream.error.TypeException;
 import io.dream.scanner.TokenType;
 
-public class Checker implements Expression.Visitor<Type>
+public class Checker implements Expr.Visitor<Type>
 {
 
     public Checker()
@@ -14,18 +14,18 @@ public class Checker implements Expression.Visitor<Type>
     /**
      * Public entry point for type checking an expression
      *
-     * @param expression The expression to type check
+     * @param expr The expression to type check
      * @return The same expression tree with type annotations added to each node
      * @throws TypeException if type checking fails
      */
-    public Expression check(Expression expression)
+    public Expr check(Expr expr)
     {
         try
         {
             // This will recursively type check and annotate the entire tree
-            Type rootType = expression.accept(this);
-            expression.setType(rootType);
-            return expression;
+            Type rootType = expr.accept(this);
+            expr.setType(rootType);
+            return expr;
         } catch (TypeException e)
         {
             // Re-throw TypeException as is
@@ -40,17 +40,17 @@ public class Checker implements Expression.Visitor<Type>
     /**
      * Public entry point for type checking with error recovery
      *
-     * @param expression    The expression to type check
+     * @param expr    The expression to type check
      * @param returnOnError The expression to return if type checking fails
      * @return The type-annotated expression tree or returnOnError if checking fails
      */
-    public Expression check(Expression expression, Expression returnOnError)
+    public Expr check(Expr expr, Expr returnOnError)
     {
         try
         {
-            Type rootType = expression.accept(this);
-            expression.setType(rootType);
-            return expression;
+            Type rootType = expr.accept(this);
+            expr.setType(rootType);
+            return expr;
         } catch (Exception e)
         {
             if (returnOnError != null)
@@ -62,7 +62,7 @@ public class Checker implements Expression.Visitor<Type>
     }
 
     @Override
-    public Type visitBinaryExpression(Expression.Binary expression)
+    public Type visitBinaryExpr(Expr.Binary expression)
     {
         // Recursively type check left and right subexpressions
         Type leftType = expression.left.accept(this);
@@ -146,7 +146,7 @@ public class Checker implements Expression.Visitor<Type>
     }
 
     @Override
-    public Type visitGroupingExpression(Expression.Grouping expression)
+    public Type visitGroupingExpr(Expr.Grouping expression)
     {
         // Type check the inner expression
         Type innerType = expression.expression.accept(this);
@@ -157,7 +157,7 @@ public class Checker implements Expression.Visitor<Type>
     }
 
     @Override
-    public Type visitUnaryExpression(Expression.Unary expression)
+    public Type visitUnaryExpr(Expr.Unary expression)
     {
         // Type check the right subexpression
         Type rightType = expression.right.accept(this);
@@ -208,7 +208,7 @@ public class Checker implements Expression.Visitor<Type>
     }
 
     @Override
-    public Type visitLiteralExpression(Expression.Literal expression)
+    public Type visitLiteralExpr(Expr.Literal expression)
     {
         // Cast to AtomicValue and get its type
         if (expression.value instanceof AtomicValue)
@@ -225,21 +225,21 @@ public class Checker implements Expression.Visitor<Type>
     /**
      * Utility method to check if an expression is properly typed
      */
-    public boolean isTyped(Expression expression)
+    public boolean isTyped(Expr expr)
     {
-        return expression.getType() != null;
+        return expr.getType() != null;
     }
 
     /**
      * Utility method to get the type of an expression (convenience method)
      */
-    public Type getType(Expression expression)
+    public Type getType(Expr expr)
     {
-        if (expression.getType() == null)
+        if (expr.getType() == null)
         {
             throw new TypeException("L'expression n'a pas été vérifiée par le vérificateur de types.");
         }
-        return expression.getType();
+        return expr.getType();
     }
 
     /**
@@ -267,9 +267,9 @@ public class Checker implements Expression.Visitor<Type>
     /**
      * Validates that an expression has a specific expected type
      */
-    public void validateType(Expression expression, Type expectedType)
+    public void validateType(Expr expr, Type expectedType)
     {
-        Type actualType = check(expression).getType();
+        Type actualType = check(expr).getType();
         if (!actualType.equals(expectedType))
         {
             throw new TypeException(
@@ -281,9 +281,9 @@ public class Checker implements Expression.Visitor<Type>
     /**
      * Validates that an expression has one of the expected types
      */
-    public void validateType(Expression expression, Type... expectedTypes)
+    public void validateType(Expr expr, Type... expectedTypes)
     {
-        Type actualType = check(expression).getType();
+        Type actualType = check(expr).getType();
         for (Type expectedType : expectedTypes)
         {
             if (actualType.equals(expectedType))

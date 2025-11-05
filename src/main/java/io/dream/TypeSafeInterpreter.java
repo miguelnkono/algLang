@@ -1,13 +1,16 @@
 package io.dream;
 
-import io.dream.ast.Expression;
+import io.dream.ast.Expr;
+import io.dream.ast.Stmt;
 import io.dream.error.RuntimeError;
 import io.dream.types.AtomicValue;
 import io.dream.types.Checker;
 import io.dream.types.Type;
 import io.dream.types.TypeFactory;
 
-public class TypeSafeInterpreter implements Expression.Visitor<Object>
+import java.util.List;
+
+public class TypeSafeInterpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void>
 {
     private final Checker typeChecker;
 
@@ -16,25 +19,29 @@ public class TypeSafeInterpreter implements Expression.Visitor<Object>
         this.typeChecker = new Checker();
     }
 
-    public void interpret(Expression expression)
+    public void interpret(List<Stmt> statements)
     {
         try
         {
-            // First, type check the expression
-            Expression typedExpr = typeChecker.check(expression);
-
-            // Then evaluate it
-            Object result = this.evaluate(typedExpr);
-            System.out.println(this.stringify(result));
+            for (Stmt statement : statements)
+            {
+                execute(statement);
+            }
         } catch (RuntimeError re)
         {
             Main.runtimeError(re);
         }
     }
 
-    private Object evaluate(Expression expression)
+    private void execute(Stmt statement)
     {
-        return expression.accept(this);
+        statement.accept(this);
+    }
+
+    private Object evaluate(Expr expr)
+    {
+        expr = typeChecker.check(expr);
+        return expr.accept(this);
     }
 
     private String stringify(Object value)
@@ -55,7 +62,7 @@ public class TypeSafeInterpreter implements Expression.Visitor<Object>
     }
 
     @Override
-    public Object visitBinaryExpression(Expression.Binary expression)
+    public Object visitBinaryExpr(Expr.Binary expression)
     {
         // Use the type information for safer evaluation
         Type exprType = expression.getType();
@@ -122,7 +129,7 @@ public class TypeSafeInterpreter implements Expression.Visitor<Object>
         return null;
     }
 
-    private Object getComparison(Expression.Binary expression, double leftVal, double rightVal)
+    private Object getComparison(Expr.Binary expression, double leftVal, double rightVal)
     {
         return switch (expression.operator.type())
         {
@@ -135,13 +142,13 @@ public class TypeSafeInterpreter implements Expression.Visitor<Object>
     }
 
     @Override
-    public Object visitGroupingExpression(Expression.Grouping expression)
+    public Object visitGroupingExpr(Expr.Grouping expression)
     {
         return evaluate(expression.expression);
     }
 
     @Override
-    public Object visitUnaryExpression(Expression.Unary expression)
+    public Object visitUnaryExpr(Expr.Unary expression)
     {
         Object right = this.evaluate(expression.right);
         Type exprType = expression.getType();
@@ -164,7 +171,7 @@ public class TypeSafeInterpreter implements Expression.Visitor<Object>
     }
 
     @Override
-    public Object visitLiteralExpression(Expression.Literal expression)
+    public Object visitLiteralExpr(Expr.Literal expression)
     {
         // Extract the actual value from AtomicValue
         if (expression.value instanceof AtomicValue)
@@ -202,5 +209,20 @@ public class TypeSafeInterpreter implements Expression.Visitor<Object>
         if (value instanceof Double) return (Double) value;
         if (value instanceof Integer) return ((Integer) value).doubleValue();
         throw new RuntimeError(null, "Expected numeric value");
+    }
+
+    @Override
+    public Void visitExpressionStmt(Stmt.Expression stmt)
+    {
+        evaluate(stmt.expression);
+        return null;
+    }
+
+    @Override
+    public Void visitPrintStmt(Stmt.Print stmt)
+    {
+        Object value = evaluate(stmt.expression);
+        System.out.println(stringify(value));
+        return null;
     }
 }

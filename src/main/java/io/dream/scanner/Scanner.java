@@ -44,6 +44,7 @@ public class Scanner
         keywords.put("tableau", TABLE);
         keywords.put("entier", INTEGER);
         keywords.put("reel", DOUBLE);
+        keywords.put("Ecrire", ECRIRE);
         keywords.put("chaine_character", STRING);   // c : chaine_charactere;
     }
 

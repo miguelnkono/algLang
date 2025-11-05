@@ -1,12 +1,14 @@
 package io.dream.parser;
 
 import io.dream.Main;
-import io.dream.ast.Expression;
+import io.dream.ast.Expr;
+import io.dream.ast.Stmt;
 import io.dream.scanner.Token;
 import io.dream.scanner.TokenType;
 import io.dream.types.AtomicTypes;
 import io.dream.types.AtomicValue;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import static io.dream.scanner.TokenType.*;
@@ -37,16 +39,39 @@ public class Parser
      *
      * @return the head of the ast.
      * */
-    public Expression parse()
+    public List<Stmt> parse()
     {
-        try
+        List<Stmt> statements = new ArrayList<>();
+
+        while (!isAtEnd())
         {
-            return this.expression();
+            statements.add(statement());
         }
-        catch (ParseError e)
-        {
-            return null;
-        }
+
+        return statements;
+    }
+
+    private Stmt statement()
+    {
+        if (match(ECRIRE)) return printStatement();
+
+        return expressionStatement();
+    }
+
+    private Stmt printStatement()
+    {
+        consume(LEFT_PAREN, "Vous avez oublié la parenthèse ouvrante!");
+        Expr value = expression();
+        consume(RIGHT_PAREN, "Vous avez oublié la parenthèse fermante!");
+        consume(SEMICOLON, "Attente d'un point virgule à la fin!");
+        return new Stmt.Print(value);
+    }
+
+    private Stmt expressionStatement()
+    {
+        Expr expression = expression();
+        consume(SEMICOLON, "Attente d'un point virgule à la fin!");
+        return new Stmt.Expression(expression);
     }
 
     /**
@@ -54,7 +79,7 @@ public class Parser
      *
      * @return An expression node.
      * */
-    private Expression expression()
+    private Expr expression()
     {
         return this.equality();
     }
@@ -64,18 +89,18 @@ public class Parser
      *
      * @return An expression node.
      * */
-    private Expression equality()
+    private Expr equality()
     {
-        Expression expression = this.comparison();
+        Expr expr = this.comparison();
 
         while (this.match(DIFF, EQUAL_EQUAL))
         {
             Token token = this.previous();
-            Expression right = this.comparison();
-            expression = new Expression.Binary(expression, token, right);
+            Expr right = this.comparison();
+            expr = new Expr.Binary(expr, token, right);
         }
 
-        return expression;
+        return expr;
     }
 
     /**
@@ -83,36 +108,36 @@ public class Parser
      *
      * @return An expression node.
      * */
-    private Expression comparison()
+    private Expr comparison()
     {
-        Expression expression = this.term();
+        Expr expr = this.term();
 
         while (this.match(GREATER, GREATER_OR_EQUAL, LESS,  LESS_OR_EQUAL))
         {
             Token token = this.previous();
-            Expression right = this.term();
-            expression = new Expression.Binary(expression, token, right);
+            Expr right = this.term();
+            expr = new Expr.Binary(expr, token, right);
         }
 
-        return expression;
+        return expr;
     }
 
     /**
      * This function parses the term node in the ast.
      *
      * @return An expression node.*/
-    private Expression term()
+    private Expr term()
     {
-        Expression expression = this.factor();
+        Expr expr = this.factor();
 
         while (this.match(MINUS, PLUS))
         {
             Token token = this.previous();
-            Expression right = this.factor();
-            expression = new Expression.Binary(expression, token, right);
+            Expr right = this.factor();
+            expr = new Expr.Binary(expr, token, right);
         }
 
-        return expression;
+        return expr;
     }
 
     /**
@@ -120,18 +145,18 @@ public class Parser
      *
      * @return An expression node.
      * */
-    private Expression factor()
+    private Expr factor()
     {
-        Expression expression = this.unary();
+        Expr expr = this.unary();
 
         while (this.match(SLASH, STAR))
         {
             Token token = this.previous();
-            Expression right = this.unary();
-            expression = new Expression.Binary(expression, token, right);
+            Expr right = this.unary();
+            expr = new Expr.Binary(expr, token, right);
         }
 
-        return expression;
+        return expr;
     }
 
     /**
@@ -139,35 +164,35 @@ public class Parser
      *
      * @return An expression node.
      * */
-    private Expression unary()
+    private Expr unary()
     {
         if (this.match(BANG, MINUS))
         {
             Token token = this.previous();
-            Expression right = this.unary();
-            return new Expression.Unary(token, right);
+            Expr right = this.unary();
+            return new Expr.Unary(token, right);
         }
 
         return this.primary();
     }
 
-    private Expression primary()
+    private Expr primary()
     {
-        if (this.match(FALSE)) return new Expression.Literal(new AtomicValue<Boolean>(false, AtomicTypes.BOOLEAN));
-        if (this.match(TRUE)) return new Expression.Literal(new AtomicValue<Boolean>(true, AtomicTypes.BOOLEAN));
-        if (this.match(NIL)) return new Expression.Literal(new AtomicValue<Void>(null, AtomicTypes.VOID));
+        if (this.match(FALSE)) return new Expr.Literal(new AtomicValue<Boolean>(false, AtomicTypes.BOOLEAN));
+        if (this.match(TRUE)) return new Expr.Literal(new AtomicValue<Boolean>(true, AtomicTypes.BOOLEAN));
+        if (this.match(NIL)) return new Expr.Literal(new AtomicValue<Void>(null, AtomicTypes.VOID));
 
         // for numbers and strings.
         if (this.match(STRING_LITERAL, INTEGER_LITERAL, DOUBLE_LITERAL))
         {
-            return new Expression.Literal(this.previous().literal());
+            return new Expr.Literal(this.previous().literal());
         }
 
         if (this.match(LEFT_PAREN))
         {
-            Expression expression = this.expression();
+            Expr expr = this.expression();
             consume(RIGHT_PAREN, "Attend ')' après l'expression.");
-            return new Expression.Grouping(expression);
+            return new Expr.Grouping(expr);
         }
 
         throw error(this.peek(), "Attends d'une expression.");

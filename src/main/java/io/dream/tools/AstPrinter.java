@@ -1,37 +1,37 @@
 package io.dream.tools;
 
-import io.dream.ast.Expression;
+import io.dream.ast.Expr;
 import io.dream.scanner.Token;
 import io.dream.scanner.TokenType;
 import io.dream.types.AtomicTypes;
 import io.dream.types.AtomicValue;
 
-public class AstPrinter implements Expression.Visitor<String>
+public class AstPrinter implements Expr.Visitor<String>
 {
-    public String print(Expression expression)
+    public String print(Expr expr)
     {
-        return expression.accept(this);
+        return expr.accept(this);
     }
 
     @Override
-    public String visitBinaryExpression(Expression.Binary expression)
+    public String visitBinaryExpr(Expr.Binary expression)
     {
         return parenthesize(expression.operator.lexeme(), expression.left, expression.right);
     }
 
     @Override
-    public String visitGroupingExpression(Expression.Grouping expression)
+    public String visitGroupingExpr(Expr.Grouping expression)
     {
         return parenthesize("group", expression.expression);
     }
 
     @Override
-    public String visitUnaryExpression(Expression.Unary expression) {
+    public String visitUnaryExpr(Expr.Unary expression) {
         return parenthesize(expression.operator.lexeme(), expression.right);
     }
 
     @Override
-    public String visitLiteralExpression(Expression.Literal expression) {
+    public String visitLiteralExpr(Expr.Literal expression) {
         if (expression.value == null)
         {
             return "nil";
@@ -39,15 +39,15 @@ public class AstPrinter implements Expression.Visitor<String>
         return expression.value.toString();
     }
 
-    private String parenthesize(String name, Expression... expressions)
+    private String parenthesize(String name, Expr... exprs)
     {
         StringBuilder stringBuilder = new StringBuilder();
 
         stringBuilder.append("(").append(name);
-        for (Expression expression : expressions)
+        for (Expr expr : exprs)
         {
             stringBuilder.append(" ");
-            stringBuilder.append(expression.accept(this));
+            stringBuilder.append(expr.accept(this));
         }
         stringBuilder.append(")");
 
@@ -56,20 +56,20 @@ public class AstPrinter implements Expression.Visitor<String>
 
     public static void main(String[] args)
     {
-        Expression expression = new Expression.Binary(
-                new Expression.Unary(
+        Expr expr = new Expr.Binary(
+                new Expr.Unary(
                         new Token(TokenType.MINUS, "-", null, 1),
 //                        new Expression.Literal(123)
-                        new Expression.Binary(
-                                new Expression.Literal(new AtomicValue<Integer>(22, AtomicTypes.INTEGER)),
+                        new Expr.Binary(
+                                new Expr.Literal(new AtomicValue<Integer>(22, AtomicTypes.INTEGER)),
                                 new Token(TokenType.PLUS, "+", null, 1),
-                                new Expression.Literal(new AtomicValue<Integer>(5, AtomicTypes.INTEGER))
+                                new Expr.Literal(new AtomicValue<Integer>(5, AtomicTypes.INTEGER))
                         )
                 ),
                 new Token(TokenType.STAR, "*", null, 1),
-                new Expression.Grouping(new Expression.Literal(new AtomicValue<Double>(45.67, AtomicTypes.FLOATING)))
+                new Expr.Grouping(new Expr.Literal(new AtomicValue<Double>(45.67, AtomicTypes.FLOATING)))
         );
 
-        System.out.println(new AstPrinter().print(expression));
+        System.out.println(new AstPrinter().print(expr));
     }
 }

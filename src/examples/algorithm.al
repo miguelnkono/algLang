@@ -10,4 +10,5 @@
 //     price <- 20,10
 // Fin
 
-"cool" + 2;
+Ecrire("cool" + " 2");
+//2 + 2;

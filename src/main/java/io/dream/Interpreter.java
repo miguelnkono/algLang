@@ -1,11 +1,11 @@
 package io.dream;
 
-import io.dream.ast.Expression;
+import io.dream.ast.Expr;
 import io.dream.error.RuntimeError;
 import io.dream.scanner.Token;
 import io.dream.types.*;
 
-public class Interpreter implements Expression.Visitor<Object>
+public class Interpreter implements Expr.Visitor<Object>
 {
   private final Checker typeChecker;
 
@@ -13,15 +13,15 @@ public class Interpreter implements Expression.Visitor<Object>
     this.typeChecker = new Checker();
   }
 
-  public void interpret(Expression expression)
+  public void interpret(Expr expr)
   {
     try
     {
       // First, type check the expression
-      Expression typedExpression = typeChecker.check(expression);
+      Expr typedExpr = typeChecker.check(expr);
 
       // Then evaluate it
-      Object result = this.evaluate(typedExpression);
+      Object result = this.evaluate(typedExpr);
       System.out.println(this.stringify(result));
     }
     catch (RuntimeError re)
@@ -30,9 +30,9 @@ public class Interpreter implements Expression.Visitor<Object>
     }
   }
 
-  private Object evaluate(Expression expression)
+  private Object evaluate(Expr expr)
   {
-    return expression.accept(this);
+    return expr.accept(this);
   }
 
 
@@ -54,7 +54,7 @@ public class Interpreter implements Expression.Visitor<Object>
   }
 
   @Override
-  public Object visitBinaryExpression(Expression.Binary expression)
+  public Object visitBinaryExpr(Expr.Binary expression)
   {
     Object left = this.evaluate(expression.left);
     Object right = this.evaluate(expression.right);
@@ -121,7 +121,7 @@ public class Interpreter implements Expression.Visitor<Object>
     return null;
   }
 
-  private static Object getComparison(Expression.Binary expression, double leftVal, double rightVal)
+  private static Object getComparison(Expr.Binary expression, double leftVal, double rightVal)
   {
     return switch (expression.operator.type()) {
       case GREATER -> leftVal > rightVal;
@@ -133,13 +133,13 @@ public class Interpreter implements Expression.Visitor<Object>
   }
 
   @Override
-  public Object visitGroupingExpression(Expression.Grouping expression)
+  public Object visitGroupingExpr(Expr.Grouping expression)
   {
     return evaluate(expression.expression);
   }
 
   @Override
-  public Object visitUnaryExpression(Expression.Unary expression)
+  public Object visitUnaryExpr(Expr.Unary expression)
   {
     Object right = this.evaluate(expression.right);
 
@@ -163,7 +163,7 @@ public class Interpreter implements Expression.Visitor<Object>
   }
 
   @Override
-  public Object visitLiteralExpression(Expression.Literal expression)
+  public Object visitLiteralExpr(Expr.Literal expression)
   {
     // Extract value from AtomicValue
     if (expression.value instanceof AtomicValue) {

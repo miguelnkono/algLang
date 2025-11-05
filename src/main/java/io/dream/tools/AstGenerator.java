@@ -19,12 +19,16 @@ public class AstGenerator
 
         String outputDirectory = args[0];
 
-        // define the ast tree.
-        defineAst(outputDirectory, "Expression", Arrays.asList(
-                "Binary : Expression left, Token operator, Expression right",
-                "Grouping : Expression expression",
-                "Unary : Token operator, Expression right",
+        defineAst(outputDirectory, "Expr", Arrays.asList(
+                "Binary : Expr left, Token operator, Expr right",
+                "Grouping : Expr expression",
+                "Unary : Token operator, Expr right",
                 "Literal : Value value"
+        ));
+
+        defineAst(outputDirectory, "Stmt", Arrays.asList(
+                "Expression: Expr expression",
+                "Print: Expr expression"
         ));
     }
 
@@ -111,10 +115,10 @@ public class AstGenerator
     private static void defineType(PrintWriter writer, String baseName, String subclassName,
                                    String fieldList)
     {
-        // static class Binary extends Expression {}
+        // static class Binary extends Expr {}
         writer.printf("    public static class %s extends %s \n    {\n", subclassName, baseName);
 
-        // Binary (Expression left, Token operator, Expression right){}
+        // Binary (Expr left, Token operator, Expr right){}
         writer.printf("        public %s (%s)\n        {\n", subclassName, fieldList);
         // the parameters in the constructor of the subclass.
         String[] fields = fieldList.split(", ");

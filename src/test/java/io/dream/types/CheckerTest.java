@@ -1,6 +1,6 @@
 package io.dream.types;
 
-import io.dream.ast.Expression;
+import io.dream.ast.Expr;
 import io.dream.error.TypeException;
 import io.dream.scanner.Token;
 import io.dream.scanner.TokenType;
@@ -30,11 +30,11 @@ class CheckerTest
   void check_ExpressionValide_RetourneExpressionTypee()
   {
     // Arrange
-    Expression.Literal literal = new Expression.Literal(
+    Expr.Literal literal = new Expr.Literal(
         new AtomicValue<>(42, AtomicTypes.INTEGER));
 
     // Act
-    Expression result = checker.check(literal);
+    Expr result = checker.check(literal);
 
     // Assert
     assertNotNull(result);
@@ -46,12 +46,12 @@ class CheckerTest
   void check_ExpressionInvalide_LanceTypeException()
   {
     // Arrange
-    Expression.Literal entier = new Expression.Literal(
+    Expr.Literal entier = new Expr.Literal(
         new AtomicValue<>(42, AtomicTypes.INTEGER));
-    Expression.Literal bool = new Expression.Literal(
+    Expr.Literal bool = new Expr.Literal(
         new AtomicValue<>(true, AtomicTypes.BOOLEAN));
     Token plus = new Token(TokenType.PLUS, "+", null, 1);
-    Expression.Binary expressionInvalide = new Expression.Binary(entier, plus, bool);
+    Expr.Binary expressionInvalide = new Expr.Binary(entier, plus, bool);
 
     // Act & Assert
     TypeException exception = assertThrows(TypeException.class, () -> {
@@ -67,12 +67,12 @@ class CheckerTest
   void testCheck_AvecRecuperationErreur_RetourneExpressionParDefaut()
   {
     // Arrange
-    Expression.Literal defaut = new Expression.Literal(
+    Expr.Literal defaut = new Expr.Literal(
         new AtomicValue<>(0, AtomicTypes.INTEGER));
-    Expression expressionInvalide = null; // Expression invalide
+    Expr exprInvalide = null; // Expression invalide
 
     // Act
-    Expression result = checker.check(expressionInvalide, defaut);
+    Expr result = checker.check(exprInvalide, defaut);
 
     // Assert
     assertEquals(defaut, result);
@@ -82,15 +82,15 @@ class CheckerTest
   void visitBinaryExpression_AdditionEntiers_RetourneTypeEntier()
   {
     // Arrange
-    Expression.Literal gauche = new Expression.Literal(
+    Expr.Literal gauche = new Expr.Literal(
         new AtomicValue<>(10, AtomicTypes.INTEGER));
-    Expression.Literal droite = new Expression.Literal(
+    Expr.Literal droite = new Expr.Literal(
         new AtomicValue<>(20, AtomicTypes.INTEGER));
     Token plus = new Token(TokenType.PLUS, "+", null, 1);
-    Expression.Binary addition = new Expression.Binary(gauche, plus, droite);
+    Expr.Binary addition = new Expr.Binary(gauche, plus, droite);
 
     // Act
-    Type result = checker.visitBinaryExpression(addition);
+    Type result = checker.visitBinaryExpr(addition);
 
     // Assert
     assertEquals(TypeFactory.INTEGER, result);
@@ -102,15 +102,15 @@ class CheckerTest
   void visitBinaryExpression_AdditionChaines_RetourneTypeChaine()
   {
     // Arrange
-    Expression.Literal gauche = new Expression.Literal(
+    Expr.Literal gauche = new Expr.Literal(
         new AtomicValue<>("Bonjour ", AtomicTypes.STRING));
-    Expression.Literal droite = new Expression.Literal(
+    Expr.Literal droite = new Expr.Literal(
         new AtomicValue<>("Monde", AtomicTypes.STRING));
     Token plus = new Token(TokenType.PLUS, "+", null, 1);
-    Expression.Binary concatenation = new Expression.Binary(gauche, plus, droite);
+    Expr.Binary concatenation = new Expr.Binary(gauche, plus, droite);
 
     // Act
-    Type result = checker.visitBinaryExpression(concatenation);
+    Type result = checker.visitBinaryExpr(concatenation);
 
     // Assert
     assertEquals(TypeFactory.STRING, result);
@@ -120,15 +120,15 @@ class CheckerTest
   void visitBinaryExpression_ComparaisonNombres_RetourneTypeBooleen()
   {
     // Arrange
-    Expression.Literal gauche = new Expression.Literal(
+    Expr.Literal gauche = new Expr.Literal(
         new AtomicValue<>(10, AtomicTypes.INTEGER));
-    Expression.Literal droite = new Expression.Literal(
+    Expr.Literal droite = new Expr.Literal(
         new AtomicValue<>(5, AtomicTypes.INTEGER));
     Token plusGrand = new Token(TokenType.GREATER, ">", null, 1);
-    Expression.Binary comparaison = new Expression.Binary(gauche, plusGrand, droite);
+    Expr.Binary comparaison = new Expr.Binary(gauche, plusGrand, droite);
 
     // Act
-    Type result = checker.visitBinaryExpression(comparaison);
+    Type result = checker.visitBinaryExpr(comparaison);
 
     // Assert
     assertEquals(TypeFactory.BOOLEAN, result);
@@ -138,16 +138,16 @@ class CheckerTest
   void visitBinaryExpression_AdditionTypesIncompatibles_LanceException()
   {
     // Arrange
-    Expression.Literal entier = new Expression.Literal(
+    Expr.Literal entier = new Expr.Literal(
         new AtomicValue<>(42, AtomicTypes.INTEGER));
-    Expression.Literal chaine = new Expression.Literal(
+    Expr.Literal chaine = new Expr.Literal(
         new AtomicValue<>("texte", AtomicTypes.STRING));
     Token plus = new Token(TokenType.PLUS, "+", null, 1);
-    Expression.Binary additionInvalide = new Expression.Binary(entier, plus, chaine);
+    Expr.Binary additionInvalide = new Expr.Binary(entier, plus, chaine);
 
     // Act & Assert
     TypeException exception = assertThrows(TypeException.class, () -> {
-      checker.visitBinaryExpression(additionInvalide);
+      checker.visitBinaryExpr(additionInvalide);
     });
 
     assertTrue(exception.getMessage().contains("incompatible"));
@@ -159,12 +159,12 @@ class CheckerTest
   void visitGroupingExpression_ExpressionInterne_RetourneMemeType()
   {
     // Arrange
-    Expression.Literal interne = new Expression.Literal(
+    Expr.Literal interne = new Expr.Literal(
         new AtomicValue<>(3.14, AtomicTypes.FLOATING));
-    Expression.Grouping groupement = new Expression.Grouping(interne);
+    Expr.Grouping groupement = new Expr.Grouping(interne);
 
     // Act
-    Type result = checker.visitGroupingExpression(groupement);
+    Type result = checker.visitGroupingExpr(groupement);
 
     // Assert
     assertEquals(TypeFactory.FLOATING, result);
@@ -175,13 +175,13 @@ class CheckerTest
   void visitUnaryExpression_MoinsUnaireEntier_RetourneTypeEntier()
   {
     // Arrange
-    Expression.Literal operand = new Expression.Literal(
+    Expr.Literal operand = new Expr.Literal(
         new AtomicValue<>(42, AtomicTypes.INTEGER));
     Token moins = new Token(TokenType.MINUS, "-", null, 1);
-    Expression.Unary moinsUnaire = new Expression.Unary(moins, operand);
+    Expr.Unary moinsUnaire = new Expr.Unary(moins, operand);
 
     // Act
-    Type result = checker.visitUnaryExpression(moinsUnaire);
+    Type result = checker.visitUnaryExpr(moinsUnaire);
 
     // Assert
     assertEquals(TypeFactory.INTEGER, result);
@@ -192,13 +192,13 @@ class CheckerTest
   void visitUnaryExpression_NotBooleen_RetourneTypeBooleen()
   {
     // Arrange
-    Expression.Literal operand = new Expression.Literal(
+    Expr.Literal operand = new Expr.Literal(
         new AtomicValue<>(true, AtomicTypes.BOOLEAN));
     Token not = new Token(TokenType.BANG, "!", null, 1);
-    Expression.Unary notExpression = new Expression.Unary(not, operand);
+    Expr.Unary notExpression = new Expr.Unary(not, operand);
 
     // Act
-    Type result = checker.visitUnaryExpression(notExpression);
+    Type result = checker.visitUnaryExpr(notExpression);
 
     // Assert
     assertEquals(TypeFactory.BOOLEAN, result);
@@ -208,14 +208,14 @@ class CheckerTest
   void visitUnaryExpression_MoinsUnaireNonNumerique_LanceException()
   {
     // Arrange
-    Expression.Literal operand = new Expression.Literal(
+    Expr.Literal operand = new Expr.Literal(
         new AtomicValue<>("texte", AtomicTypes.STRING));
     Token moins = new Token(TokenType.MINUS, "-", null, 1);
-    Expression.Unary moinsInvalide = new Expression.Unary(moins, operand);
+    Expr.Unary moinsInvalide = new Expr.Unary(moins, operand);
 
     // Act & Assert
     TypeException exception = assertThrows(TypeException.class, () -> {
-      checker.visitUnaryExpression(moinsInvalide);
+      checker.visitUnaryExpr(moinsInvalide);
     });
 
     assertTrue(exception.getMessage().contains("incompatible"));
@@ -226,11 +226,11 @@ class CheckerTest
   void visitLiteralExpression_Entier_RetourneTypeEntier()
   {
     // Arrange
-    Expression.Literal literal = new Expression.Literal(
+    Expr.Literal literal = new Expr.Literal(
         new AtomicValue<>(123, AtomicTypes.INTEGER));
 
     // Act
-    Type result = checker.visitLiteralExpression(literal);
+    Type result = checker.visitLiteralExpr(literal);
 
     // Assert
     assertEquals(TypeFactory.INTEGER, result);
@@ -240,11 +240,11 @@ class CheckerTest
   void visitLiteralExpression_Booleen_RetourneTypeBooleen()
   {
     // Arrange
-    Expression.Literal literal = new Expression.Literal(
+    Expr.Literal literal = new Expr.Literal(
         new AtomicValue<>(false, AtomicTypes.BOOLEAN));
 
     // Act
-    Type result = checker.visitLiteralExpression(literal);
+    Type result = checker.visitLiteralExpr(literal);
 
     // Assert
     assertEquals(TypeFactory.BOOLEAN, result);
@@ -254,7 +254,7 @@ class CheckerTest
   void isTyped_ExpressionTypee_RetourneVrai()
   {
     // Arrange
-    Expression.Literal literal = new Expression.Literal(
+    Expr.Literal literal = new Expr.Literal(
         new AtomicValue<>(42, AtomicTypes.INTEGER));
     checker.check(literal);
 
@@ -269,7 +269,7 @@ class CheckerTest
   void isTyped_ExpressionNonTypee_RetourneFaux()
   {
     // Arrange
-    Expression.Literal literal = new Expression.Literal(
+    Expr.Literal literal = new Expr.Literal(
         new AtomicValue<>(42, AtomicTypes.INTEGER));
 
     // Act
@@ -283,7 +283,7 @@ class CheckerTest
   void getType_ExpressionTypee_RetourneType()
   {
     // Arrange
-    Expression.Literal literal = new Expression.Literal(
+    Expr.Literal literal = new Expr.Literal(
         new AtomicValue<>(3.14, AtomicTypes.FLOATING));
     checker.check(literal);
 
@@ -298,7 +298,7 @@ class CheckerTest
   void getType_ExpressionNonTypee_LanceException()
   {
     // Arrange
-    Expression.Literal literal = new Expression.Literal(
+    Expr.Literal literal = new Expr.Literal(
         new AtomicValue<>("test", AtomicTypes.STRING));
 
     // Act & Assert
@@ -313,7 +313,7 @@ class CheckerTest
   void validateType_TypeCorrect_PasDException()
   {
     // Arrange
-    Expression.Literal literal = new Expression.Literal(
+    Expr.Literal literal = new Expr.Literal(
         new AtomicValue<>(42, AtomicTypes.INTEGER));
 
     // Act & Assert
@@ -326,7 +326,7 @@ class CheckerTest
   void validateType_TypeIncorrect_LanceException()
   {
     // Arrange
-    Expression.Literal literal = new Expression.Literal(
+    Expr.Literal literal = new Expr.Literal(
         new AtomicValue<>(42, AtomicTypes.INTEGER));
 
     // Act & Assert
@@ -342,7 +342,7 @@ class CheckerTest
   void testValidateType_TypeDansListe_PasDException()
   {
     // Arrange
-    Expression.Literal literal = new Expression.Literal(
+    Expr.Literal literal = new Expr.Literal(
         new AtomicValue<>('A', AtomicTypes.CHAR));
 
     // Act & Assert
@@ -355,7 +355,7 @@ class CheckerTest
   void testValidateType_TypeHorsListe_LanceException()
   {
     // Arrange
-    Expression.Literal literal = new Expression.Literal(
+    Expr.Literal literal = new Expr.Literal(
         new AtomicValue<>(true, AtomicTypes.BOOLEAN));
 
     // Act & Assert
@@ -371,22 +371,22 @@ class CheckerTest
   void test_ExpressionComplexe_VerificationComplete()
   {
     // Arrange: (10 + 20) * 3
-    Expression.Literal dix = new Expression.Literal(
+    Expr.Literal dix = new Expr.Literal(
         new AtomicValue<>(10, AtomicTypes.INTEGER));
-    Expression.Literal vingt = new Expression.Literal(
+    Expr.Literal vingt = new Expr.Literal(
         new AtomicValue<>(20, AtomicTypes.INTEGER));
-    Expression.Literal trois = new Expression.Literal(
+    Expr.Literal trois = new Expr.Literal(
         new AtomicValue<>(3, AtomicTypes.INTEGER));
 
     Token plus = new Token(TokenType.PLUS, "+", null, 1);
     Token fois = new Token(TokenType.STAR, "*", null, 1);
 
-    Expression.Binary addition = new Expression.Binary(dix, plus, vingt);
-    Expression.Grouping groupement = new Expression.Grouping(addition);
-    Expression.Binary multiplication = new Expression.Binary(groupement, fois, trois);
+    Expr.Binary addition = new Expr.Binary(dix, plus, vingt);
+    Expr.Grouping groupement = new Expr.Grouping(addition);
+    Expr.Binary multiplication = new Expr.Binary(groupement, fois, trois);
 
     // Act
-    Expression result = checker.check(multiplication);
+    Expr result = checker.check(multiplication);
 
     // Assert
     assertNotNull(result);

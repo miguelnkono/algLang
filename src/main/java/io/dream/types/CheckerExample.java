@@ -1,6 +1,6 @@
 package io.dream.types;
 
-import io.dream.ast.Expression;
+import io.dream.ast.Expr;
 import io.dream.error.TypeException;
 import io.dream.scanner.Token;
 import io.dream.scanner.TokenType;
@@ -15,31 +15,31 @@ public class CheckerExample
         try
         {
             // Create expression: (10 + 20) * 2
-            Expression.Literal ten = new Expression.Literal(
+            Expr.Literal ten = new Expr.Literal(
                     new AtomicValue<Integer>(10, AtomicTypes.INTEGER));
-            Expression.Literal twenty = new Expression.Literal(
+            Expr.Literal twenty = new Expr.Literal(
                     new AtomicValue<Integer>(20, AtomicTypes.INTEGER));
-            Expression.Literal two = new Expression.Literal(
+            Expr.Literal two = new Expr.Literal(
                     new AtomicValue<Integer>(2, AtomicTypes.INTEGER));
 
             Token plus = new Token(TokenType.PLUS, "+", null, 1);
             Token star = new Token(TokenType.STAR, "*", null, 1);
 
-            Expression.Binary addition = new Expression.Binary(ten, plus, twenty);
-            Expression.Grouping grouping = new Expression.Grouping(addition);
-            Expression.Binary multiplication = new Expression.Binary(grouping, star, two);
+            Expr.Binary addition = new Expr.Binary(ten, plus, twenty);
+            Expr.Grouping grouping = new Expr.Grouping(addition);
+            Expr.Binary multiplication = new Expr.Binary(grouping, star, two);
 
             // Type check the entire expression - returns the SAME tree with types added
-            Expression typedExpr = checker.check(multiplication);
+            Expr typedExpr = checker.check(multiplication);
 
             System.out.println("Type checking successful!");
             System.out.println("Root type: " + typedExpr.getType()); // "entier"
             System.out.println("Is this the same object? " + (typedExpr == multiplication)); // true
 
             // You can now access types at every level
-            Expression.Binary multBinary = (Expression.Binary) typedExpr;
-            Expression.Grouping multGrouping = (Expression.Grouping) multBinary.left;
-            Expression.Binary addBinary = (Expression.Binary) multGrouping.expression;
+            Expr.Binary multBinary = (Expr.Binary) typedExpr;
+            Expr.Grouping multGrouping = (Expr.Grouping) multBinary.left;
+            Expr.Binary addBinary = (Expr.Binary) multGrouping.expression;
 
             System.out.println("Multiplication type: " + multBinary.getType());
             System.out.println("Grouping type: " + multGrouping.getType());
@@ -55,15 +55,15 @@ public class CheckerExample
         // Example 2: Type error
         try
         {
-            Expression.Literal number = new Expression.Literal(
+            Expr.Literal number = new Expr.Literal(
                     new AtomicValue<Integer>(42, AtomicTypes.INTEGER));
-            Expression.Literal bool = new Expression.Literal(
+            Expr.Literal bool = new Expr.Literal(
                     new AtomicValue<Boolean>(true, AtomicTypes.BOOLEAN));
 
             Token plus = new Token(TokenType.PLUS, "+", null, 1);
-            Expression.Binary invalid = new Expression.Binary(number, plus, bool);
+            Expr.Binary invalid = new Expr.Binary(number, plus, bool);
 
-            Expression result = checker.check(invalid); // This will throw TypeException
+            Expr result = checker.check(invalid); // This will throw TypeException
 
         } catch (TypeException e)
         {
@@ -72,29 +72,29 @@ public class CheckerExample
     }
 
     // Utility method to print the expression tree with types
-    private static void printExpressionWithTypes(Expression expr, int indent)
+    private static void printExpressionWithTypes(Expr expr, int indent)
     {
         String spaces = "  ".repeat(indent);
 
-        if (expr instanceof Expression.Binary)
+        if (expr instanceof Expr.Binary)
         {
-            Expression.Binary binary = (Expression.Binary) expr;
+            Expr.Binary binary = (Expr.Binary) expr;
             System.out.println(spaces + "Binary[" + binary.operator.lexeme() + "] : " + binary.getType());
             printExpressionWithTypes(binary.left, indent + 1);
             printExpressionWithTypes(binary.right, indent + 1);
-        } else if (expr instanceof Expression.Unary)
+        } else if (expr instanceof Expr.Unary)
         {
-            Expression.Unary unary = (Expression.Unary) expr;
+            Expr.Unary unary = (Expr.Unary) expr;
             System.out.println(spaces + "Unary[" + unary.operator.lexeme() + "] : " + unary.getType());
             printExpressionWithTypes(unary.right, indent + 1);
-        } else if (expr instanceof Expression.Grouping)
+        } else if (expr instanceof Expr.Grouping)
         {
-            Expression.Grouping grouping = (Expression.Grouping) expr;
+            Expr.Grouping grouping = (Expr.Grouping) expr;
             System.out.println(spaces + "Grouping : " + grouping.getType());
             printExpressionWithTypes(grouping.expression, indent + 1);
-        } else if (expr instanceof Expression.Literal)
+        } else if (expr instanceof Expr.Literal)
         {
-            Expression.Literal literal = (Expression.Literal) expr;
+            Expr.Literal literal = (Expr.Literal) expr;
             System.out.println(spaces + "Literal[" + literal.value + "] : " + literal.getType());
         }
     }

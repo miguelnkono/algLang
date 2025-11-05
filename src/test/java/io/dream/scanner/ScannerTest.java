@@ -225,4 +225,27 @@ class ScannerTest
         assertEquals(VARIABLE, tokens.get(1).type());
         assertEquals(ALGORITHM, tokens.get(2).type());
     }
+
+    @Test
+    void scanStatements()
+    {
+        String source = "Variables:\n\ta: entier;\n\tb: reel;\n";
+        scanner = new Scanner(source);
+        List<Token> tokens = scanner.scanTokens();
+
+        assertEquals(13, tokens.size());
+        assertEquals(VARIABLE, tokens.get(0).type());
+        assertEquals(COLON, tokens.get(1).type());
+        assertEquals(INDENT, tokens.get(2).type());
+        assertEquals(IDENTIFIER, tokens.get(3).type());
+        assertEquals(COLON, tokens.get(4).type());
+        assertEquals(INTEGER, tokens.get(5).type());
+        assertEquals(SEMICOLON, tokens.get(6).type());
+        assertEquals(INDENT, tokens.get(7).type());
+        assertEquals(IDENTIFIER, tokens.get(8).type());
+        assertEquals(COLON, tokens.get(9).type());
+        assertEquals(DOUBLE, tokens.get(10).type());
+        assertEquals(SEMICOLON, tokens.get(11).type());
+        assertEquals(EOF, tokens.get(12).type());
+    }
 }

@@ -1,6 +1,7 @@
 package io.dream;
 
-import io.dream.ast.Expression;
+import io.dream.ast.Expr;
+import io.dream.ast.Stmt;
 import io.dream.error.RuntimeError;
 import io.dream.parser.Parser;
 import io.dream.scanner.Scanner;
@@ -118,22 +119,22 @@ public class Main
         List<Token> tokens = scanner.scanTokens();
 
         Parser parser = new Parser(tokens);
-        Expression expression = parser.parse();
+        List<Stmt> statements = parser.parse();
 
         // todo: run the type checker here...
-        if (!hadError) {
+        /*if (!hadError) {
           try {
             Checker typeChecker = new Checker();
-            typeChecker.check(expression);
+            expr = typeChecker.check(expr);
           } catch (Exception e) {
             System.err.println("Erreur de type: " + e.getMessage());
             hadError = true;
             return;
           }
-        }
+        }*/
 
         if (!hadError) {
-          interpreter.interpret(expression);
+          interpreter.interpret(statements);
         }
     }
 
