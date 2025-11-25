@@ -12,6 +12,7 @@ public abstract class Expr
 		 R visitGroupingExpr (Grouping expr);
 		 R visitUnaryExpr (Unary expr);
 		 R visitLiteralExpr (Literal expr);
+		 R visitVariableExpr (Variable expr);
 	}
 
     public static class Binary extends Expr 
@@ -23,14 +24,14 @@ public abstract class Expr
             this.right = right;
         }
 
-		@Override
-		public <R> R accept(Visitor<R> visitor) {
-			return visitor.visitBinaryExpr(this);
-		}
+			@Override
+			public <R> R accept(Visitor<R> visitor) {
+				return visitor.visitBinaryExpr(this);
+			}
 
-		public final Expr left;
-		public final Token operator;
-		public final Expr right;
+			public final Expr left;
+			public final Token operator;
+			public final Expr right;
     }
 
     public static class Grouping extends Expr 
@@ -40,12 +41,12 @@ public abstract class Expr
             this.expression = expression;
         }
 
-		@Override
-		public <R> R accept(Visitor<R> visitor) {
-			return visitor.visitGroupingExpr(this);
-		}
+			@Override
+			public <R> R accept(Visitor<R> visitor) {
+				return visitor.visitGroupingExpr(this);
+			}
 
-		public final Expr expression;
+			public final Expr expression;
     }
 
     public static class Unary extends Expr 
@@ -56,13 +57,13 @@ public abstract class Expr
             this.right = right;
         }
 
-		@Override
-		public <R> R accept(Visitor<R> visitor) {
-			return visitor.visitUnaryExpr(this);
-		}
+			@Override
+			public <R> R accept(Visitor<R> visitor) {
+				return visitor.visitUnaryExpr(this);
+			}
 
-		public final Token operator;
-		public final Expr right;
+			public final Token operator;
+			public final Expr right;
     }
 
     public static class Literal extends Expr 
@@ -72,12 +73,27 @@ public abstract class Expr
             this.value = value;
         }
 
-		@Override
-		public <R> R accept(Visitor<R> visitor) {
-			return visitor.visitLiteralExpr(this);
-		}
+			@Override
+			public <R> R accept(Visitor<R> visitor) {
+				return visitor.visitLiteralExpr(this);
+			}
 
-		public final Value value;
+			public final Value value;
+    }
+
+    public static class Variable extends Expr 
+    {
+        public Variable (Token name)
+        {
+            this.name = name;
+        }
+
+			@Override
+			public <R> R accept(Visitor<R> visitor) {
+				return visitor.visitVariableExpr(this);
+			}
+
+			public final Token name;
     }
 
 	private Type type;

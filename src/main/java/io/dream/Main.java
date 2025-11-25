@@ -1,13 +1,11 @@
 package io.dream;
 
-import io.dream.ast.Expr;
 import io.dream.ast.Stmt;
 import io.dream.error.RuntimeError;
 import io.dream.parser.Parser;
 import io.dream.scanner.Scanner;
 import io.dream.scanner.Token;
 import io.dream.scanner.TokenType;
-import io.dream.types.Checker;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -27,7 +25,7 @@ public class Main
     private static boolean hadError = false;
     private static boolean hadRuntimeError = false;
 //    private static Interpreter interpreter = new Interpreter();
-    private static TypeSafeInterpreter interpreter = new TypeSafeInterpreter();
+    private static final TypeSafeInterpreter interpreter = new TypeSafeInterpreter();
 
     /**
      * The entry point of application.
@@ -37,12 +35,12 @@ public class Main
      */
     public static void main(String[] args) throws IOException
     {
-        if (args.length > 2)
+        if (args.length > 1)
         {
             System.out.format("Usage: algolang <script>.al\n");
             System.exit(64);
         }
-        else if (args.length == 2)
+        else if (args.length == 1)
         {
             if (!Files.exists(Path.of(args[0])))
             {
@@ -65,7 +63,6 @@ public class Main
         else
         {
           // user prefer run the prompt.
-            System.out.println(args.length);
             runPrompt();
         }
     }

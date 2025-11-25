@@ -23,12 +23,14 @@ public class AstGenerator
                 "Binary : Expr left, Token operator, Expr right",
                 "Grouping : Expr expression",
                 "Unary : Token operator, Expr right",
-                "Literal : Value value"
+                "Literal : Value value",
+                "Variable : Token name"
         ));
 
         defineAst(outputDirectory, "Stmt", Arrays.asList(
                 "Expression: Expr expression",
-                "Print: Expr expression"
+                "Print: Expr expression",
+                "Var:   Token name, Expr initializer"
         ));
     }
 
@@ -130,15 +132,15 @@ public class AstGenerator
         writer.println("        }\n");
 
         // implement the accept method of the visitor pattern interface.
-        writer.printf("\t\t@Override\n");
-        writer.printf("\t\tpublic <R> R accept(Visitor<R> visitor) {\n");
-        writer.printf("\t\t\treturn visitor.visit%s%s(this);\n", subclassName, baseName);
-        writer.printf("\t\t}\n\n");
+        writer.printf("\t\t\t@Override\n");
+        writer.printf("\t\t\tpublic <R> R accept(Visitor<R> visitor) {\n");
+        writer.printf("\t\t\t\treturn visitor.visit%s%s(this);\n", subclassName, baseName);
+        writer.printf("\t\t\t}\n\n");
 
         // fields
         for (String field : fields)
         {
-            writer.printf("\t\tpublic final %s;\n", field);
+            writer.printf("\t\t\tpublic final %s;\n", field);
         }
 
         writer.println("    }\n");

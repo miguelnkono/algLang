@@ -12,3 +12,5 @@
 
 Ecrire("cool" + " 2");
 Ecrire(2 + 2);
+Ecrire(10 * 3 - 4/2 + 20);
+Ecrire("Bonjour à tous");

@@ -10,6 +10,7 @@ public abstract class Stmt
 	public interface Visitor<R> {
 		 R visitExpressionStmt (Expression stmt);
 		 R visitPrintStmt (Print stmt);
+		 R visitVarStmt (Var stmt);
 	}
 
     public static class Expression extends Stmt 
@@ -19,12 +20,12 @@ public abstract class Stmt
             this.expression = expression;
         }
 
-		@Override
-		public <R> R accept(Visitor<R> visitor) {
-			return visitor.visitExpressionStmt(this);
-		}
+			@Override
+			public <R> R accept(Visitor<R> visitor) {
+				return visitor.visitExpressionStmt(this);
+			}
 
-		public final Expr expression;
+			public final Expr expression;
     }
 
     public static class Print extends Stmt 
@@ -34,12 +35,29 @@ public abstract class Stmt
             this.expression = expression;
         }
 
-		@Override
-		public <R> R accept(Visitor<R> visitor) {
-			return visitor.visitPrintStmt(this);
-		}
+			@Override
+			public <R> R accept(Visitor<R> visitor) {
+				return visitor.visitPrintStmt(this);
+			}
 
-		public final Expr expression;
+			public final Expr expression;
+    }
+
+    public static class Var extends Stmt 
+    {
+        public Var (Token name, Expr initializer)
+        {
+            this.name = name;
+            this.initializer = initializer;
+        }
+
+			@Override
+			public <R> R accept(Visitor<R> visitor) {
+				return visitor.visitVarStmt(this);
+			}
+
+			public final Token name;
+			public final Expr initializer;
     }
 
 	private Type type;

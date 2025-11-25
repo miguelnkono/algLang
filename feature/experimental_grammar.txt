@@ -1,0 +1,24 @@
+This is the grammar of our language :
+
+
+I think having two level of recursivity will help with the recursion in grammar of our language.
+So we'll have a recurse in the header bloc level and the body bloc of the algorithm itself.
+
+program             -> headerstatement | EOF ;
+headerstatement     -> namestatement | variablestatement ;
+namestatement       -> "Algorithm: " IDENTIFIER ";" ;
+variablestatement   -> "Variables: " statement ;
+
+statement       -> varStmt | exprStmt | printStmt ;
+exprStmt        -> expr ";" ;
+printStmt       -> "Ecrire (" expr ");" ;
+expr            -> equality ;
+equality        -> comparison (("!=" | "==") comparison)* ;
+comparison      -> term ((">" | ">=" | "<" | "<=") term)* ;
+term            -> factory (("+"| "-") factor)* ;
+factor          -> unary (("/"| "*") unary)* ;
+unary           -> ("!"| "-") unary | primary ;
+primary         -> NUMBER | STRING | "vrai" | "faux" | "nil" | "(" expr ")" ;
+
+
+algoStmt        -> "Algorithme :" declaration ;

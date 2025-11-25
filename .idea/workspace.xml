@@ -1,0 +1,198 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="98b14e41-c5b1-4970-a627-97fb4122f2aa" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/feature/experimental_grammar.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/feature/language_grammar.txt" beforeDir="false" afterPath="$PROJECT_DIR$/feature/language_grammar.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/examples/algorithm.al" beforeDir="false" afterPath="$PROJECT_DIR$/src/examples/algorithm.al" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/io/dream/Main.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/io/dream/Main.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/io/dream/ast/Expr.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/io/dream/ast/Expr.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/io/dream/ast/Stmt.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/io/dream/ast/Stmt.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/io/dream/parser/Parser.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/io/dream/parser/Parser.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/io/dream/tools/AstGenerator.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/io/dream/tools/AstGenerator.java" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="CodeInsightWorkspaceSettings">
+    <option name="optimizeImportsOnTheFly" value="true" />
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Interface" />
+        <option value="Enum" />
+        <option value="Class" />
+        <option value="JUnit5 Test Class" />
+      </list>
+    </option>
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="GitHubPullRequestSearchHistory">{
+  &quot;lastFilter&quot;: {
+    &quot;state&quot;: &quot;OPEN&quot;,
+    &quot;assignee&quot;: &quot;miguelnkono&quot;
+  }
+}</component>
+  <component name="GithubPullRequestsUISettings">{
+  &quot;selectedUrlAndAccountId&quot;: {
+    &quot;url&quot;: &quot;https://github.com/miguelnkono/algLang.git&quot;,
+    &quot;accountId&quot;: &quot;d51a1072-7639-4bdf-bb98-6b38f9c63443&quot;
+  }
+}</component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 2
+}</component>
+  <component name="ProjectId" id="33tfLYt71fNsNHetEwPqNmzAvp8" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "Application.AstGenerator.executor": "Run",
+    "Application.AstPrinter.executor": "Run",
+    "Application.AtomicType.executor": "Run",
+    "Application.AtomicValue.executor": "Run",
+    "Application.CheckerExample.executor": "Run",
+    "Application.Main.executor": "Run",
+    "JUnit.CheckerTest.executor": "Run",
+    "JUnit.CheckerTest.testValidateType_TypeHorsListe_LanceException.executor": "Run",
+    "JUnit.ScannerTest.executor": "Run",
+    "JUnit.ScannerTest.scanTokens.executor": "Run",
+    "JUnit.ScannerTest.scanTokensIndent.executor": "Run",
+    "ModuleVcsDetector.initialDetectionPerformed": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "com.intellij.testIntegration.createTest.CreateTestDialog.defaultLibrary": "JUnit5",
+    "com.intellij.testIntegration.createTest.CreateTestDialog.defaultLibrarySuperClass.JUnit5": "",
+    "git-widget-placeholder": "variable",
+    "ignore.virus.scanning.warn.message": "true",
+    "kotlin-language-version-configured": "true",
+    "settings.editor.selected.configurable": "preferences.lookFeel"
+  }
+}]]></component>
+  <component name="RecentsManager">
+    <key name="CreateTestDialog.Recents.Supers">
+      <recent name="" />
+    </key>
+    <key name="CreateTestDialog.RecentsKey">
+      <recent name="io.dream.types" />
+    </key>
+  </component>
+  <component name="RunManager" selected="Application.AstGenerator">
+    <configuration name="AstGenerator" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
+      <option name="MAIN_CLASS_NAME" value="io.dream.tools.AstGenerator" />
+      <module name="algoLang" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="io.dream.tools.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="CheckerExample" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
+      <option name="MAIN_CLASS_NAME" value="io.dream.types.CheckerExample" />
+      <module name="algoLang" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="io.dream.types.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="Main" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
+      <option name="MAIN_CLASS_NAME" value="io.dream.Main" />
+      <module name="algoLang" />
+      <option name="PROGRAM_PARAMETERS" value="src/examples/algorithm.al" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="io.dream.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="CheckerTest" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
+      <module name="algoLang" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="io.dream.types.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <option name="PACKAGE_NAME" value="io.dream.types" />
+      <option name="MAIN_CLASS_NAME" value="io.dream.types.CheckerTest" />
+      <option name="TEST_OBJECT" value="class" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="CheckerTest.testValidateType_TypeHorsListe_LanceException" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
+      <module name="algoLang" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="io.dream.types.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <option name="PACKAGE_NAME" value="io.dream.types" />
+      <option name="MAIN_CLASS_NAME" value="io.dream.types.CheckerTest" />
+      <option name="METHOD_NAME" value="testValidateType_TypeHorsListe_LanceException" />
+      <option name="TEST_OBJECT" value="method" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <list>
+      <item itemvalue="Application.AstGenerator" />
+      <item itemvalue="Application.CheckerExample" />
+      <item itemvalue="Application.Main" />
+      <item itemvalue="JUnit.CheckerTest" />
+      <item itemvalue="JUnit.CheckerTest.testValidateType_TypeHorsListe_LanceException" />
+    </list>
+    <recent_temporary>
+      <list>
+        <item itemvalue="Application.AstGenerator" />
+        <item itemvalue="Application.Main" />
+        <item itemvalue="JUnit.CheckerTest.testValidateType_TypeHorsListe_LanceException" />
+        <item itemvalue="JUnit.CheckerTest" />
+        <item itemvalue="Application.CheckerExample" />
+      </list>
+    </recent_temporary>
+  </component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="98b14e41-c5b1-4970-a627-97fb4122f2aa" name="Changes" comment="" />
+      <created>1760141236890</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1760141236890</updated>
+    </task>
+    <servers />
+  </component>
+  <component name="github-copilot-workspace">
+    <instructionFileLocations>
+      <option value=".github/instructions" />
+    </instructionFileLocations>
+    <promptFileLocations>
+      <option value=".github/prompts" />
+    </promptFileLocations>
+  </component>
+</project>
