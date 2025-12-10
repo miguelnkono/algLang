@@ -8,8 +8,7 @@ public class Checker implements Expression.Visitor<Type>
 {
 
     public Checker()
-    {
-    }
+    { }
 
     /**
      * Public entry point for type checking an expression
@@ -213,6 +212,7 @@ public class Checker implements Expression.Visitor<Type>
         // Cast to AtomicValue and get its type
         if (expression.value instanceof AtomicValue)
         {
+        	// we don't know the type of the atomic value so we cast it generically.
             AtomicValue<?> atomicValue = (AtomicValue<?>) expression.value;
             return atomicValue.getType();
         }
