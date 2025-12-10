@@ -1,2 +1,0 @@
-Get-ChildItem
-Clear-Host
