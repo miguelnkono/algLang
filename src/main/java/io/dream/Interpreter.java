@@ -1,6 +1,7 @@
 package io.dream;
 
 import io.dream.ast.Expr;
+import io.dream.ast.Expr.Variable;
 import io.dream.error.RuntimeError;
 import io.dream.scanner.Token;
 import io.dream.types.*;
@@ -203,4 +204,11 @@ public class Interpreter implements Expr.Visitor<Object>
     }
     throw new RuntimeError(operator, "Les opérateurs doivent tous être des nombres.");
   }
+
+	@Override
+	public Object visitVariableExpr(Variable expr)
+	{
+		// TODO Auto-generated method stub
+		return null;
+	}
 }

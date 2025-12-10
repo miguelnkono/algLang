@@ -1,6 +1,7 @@
 package io.dream.types;
 
 import io.dream.ast.Expr;
+import io.dream.ast.Expr.Variable;
 import io.dream.error.TypeException;
 import io.dream.scanner.TokenType;
 
@@ -296,4 +297,11 @@ public class Checker implements Expr.Visitor<Type>
                         actualType, java.util.Arrays.toString(expectedTypes))
         );
     }
+
+		@Override
+		public Type visitVariableExpr(Variable expr)
+		{
+			// TODO Auto-generated method stub
+			return null;
+		}
 }

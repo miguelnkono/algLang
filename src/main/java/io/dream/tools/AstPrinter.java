@@ -1,6 +1,7 @@
 package io.dream.tools;
 
 import io.dream.ast.Expr;
+import io.dream.ast.Expr.Variable;
 import io.dream.scanner.Token;
 import io.dream.scanner.TokenType;
 import io.dream.types.AtomicTypes;
@@ -72,4 +73,11 @@ public class AstPrinter implements Expr.Visitor<String>
 
         System.out.println(new AstPrinter().print(expr));
     }
+
+		@Override
+		public String visitVariableExpr(Variable expr)
+		{
+			// TODO Auto-generated method stub
+			return null;
+		}
 }

@@ -1,7 +1,9 @@
 package io.dream;
 
 import io.dream.ast.Expr;
+import io.dream.ast.Expr.Variable;
 import io.dream.ast.Stmt;
+import io.dream.ast.Stmt.Var;
 import io.dream.error.RuntimeError;
 import io.dream.types.AtomicValue;
 import io.dream.types.Checker;
@@ -225,4 +227,18 @@ public class TypeSafeInterpreter implements Expr.Visitor<Object>, Stmt.Visitor<V
         System.out.println(stringify(value));
         return null;
     }
+
+		@Override
+		public Void visitVarStmt(Var stmt)
+		{
+			// TODO Auto-generated method stub
+			return null;
+		}
+
+		@Override
+		public Object visitVariableExpr(Variable expr)
+		{
+			// TODO Auto-generated method stub
+			return null;
+		}
 }
