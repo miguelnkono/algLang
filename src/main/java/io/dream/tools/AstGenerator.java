@@ -26,6 +26,11 @@ public class AstGenerator
                 "Unary : Token operator, Expression right",
                 "Literal : Value value"
         ));
+
+        // the statement
+        defineAst(outputDirectory, "Statement", Arrays.asList(
+                "ExpressionStmt: Expression expression"
+        ));
     }
 
     /**
