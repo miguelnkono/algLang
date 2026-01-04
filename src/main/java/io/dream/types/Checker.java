@@ -1,65 +1,61 @@
 package io.dream.types;
 
 import io.dream.ast.Expression;
+import io.dream.ast.Statement;
 import io.dream.error.TypeException;
 import io.dream.scanner.TokenType;
 
-public class Checker implements Expression.Visitor<Type>
-{
+import java.util.List;
 
+public class Checker implements Expression.Visitor<Type>, Statement.Visitor<Void>
+{
     public Checker()
     { }
 
-    /**
-     * Public entry point for type checking an expression
-     *
-     * @param expression The expression to type check
-     * @return The same expression tree with type annotations added to each node
-     * @throws TypeException if type checking fails
-     */
+    // New: Check a list of statements
+    public void check(List<Statement> statements)
+    {
+        for (Statement statement : statements)
+        {
+            check(statement);
+        }
+    }
+
+    // New: Check a single statement
+    public Statement check(Statement statement)
+    {
+        statement.accept(this);
+        return statement;
+    }
+
+    // Keep the old method for backward compatibility
     public Expression check(Expression expression)
     {
         try
         {
-            // This will recursively type check and annotate the entire tree
             Type rootType = expression.accept(this);
             expression.setType(rootType);
             return expression;
         } catch (TypeException e)
         {
-            // Re-throw TypeException as is
             throw e;
         } catch (Exception e)
         {
-            // Wrap other exceptions in TypeException
             throw new TypeException("Échec de la vérification des types: " + e.getMessage());
         }
     }
 
-    /**
-     * Public entry point for type checking with error recovery
-     *
-     * @param expression    The expression to type check
-     * @param returnOnError The expression to return if type checking fails
-     * @return The type-annotated expression tree or returnOnError if checking fails
-     */
-    public Expression check(Expression expression, Expression returnOnError)
+    @Override
+    public Void visitExpressionStmtStatement(Statement.ExpressionStmt statement)
     {
-        try
-        {
-            Type rootType = expression.accept(this);
-            expression.setType(rootType);
-            return expression;
-        } catch (Exception e)
-        {
-            if (returnOnError != null)
-            {
-                return returnOnError;
-            }
-            throw new TypeException("Échec de la vérification des types: " + e.getMessage());
-        }
+        // Type check the expression inside the statement
+        Type exprType = statement.expression.accept(this);
+        statement.expression.setType(exprType);
+        statement.setType(exprType); // Optional: set type on statement too
+        return null;
     }
 
+    // Rest of the Expression.Visitor methods remain exactly the same...
     @Override
     public Type visitBinaryExpression(Expression.Binary expression)
     {
@@ -140,7 +136,7 @@ public class Checker implements Expression.Visitor<Type>
                 );
         }
 
-        // The expression's type will be set by the check() method
+        expression.setType(resultType);
         return resultType;
     }
 
@@ -150,8 +146,7 @@ public class Checker implements Expression.Visitor<Type>
         // Type check the inner expression
         Type innerType = expression.expression.accept(this);
         expression.expression.setType(innerType);
-
-        // Grouping has the same type as its inner expression
+        expression.setType(innerType);
         return innerType;
     }
 
@@ -203,6 +198,7 @@ public class Checker implements Expression.Visitor<Type>
                 );
         }
 
+        expression.setType(resultType);
         return resultType;
     }
 
@@ -212,9 +208,10 @@ public class Checker implements Expression.Visitor<Type>
         // Cast to AtomicValue and get its type
         if (expression.value instanceof AtomicValue)
         {
-        	// we don't know the type of the atomic value so we cast it generically.
             AtomicValue<?> atomicValue = (AtomicValue<?>) expression.value;
-            return atomicValue.getType();
+            Type type = atomicValue.getType();
+            expression.setType(type);
+            return type;
         }
         throw new TypeException(
                 "Valeur littérale de type non supporté. " +
@@ -222,17 +219,12 @@ public class Checker implements Expression.Visitor<Type>
         );
     }
 
-    /**
-     * Utility method to check if an expression is properly typed
-     */
+    // Utility methods remain the same...
     public boolean isTyped(Expression expression)
     {
         return expression.getType() != null;
     }
 
-    /**
-     * Utility method to get the type of an expression (convenience method)
-     */
     public Type getType(Expression expression)
     {
         if (expression.getType() == null)
@@ -242,9 +234,6 @@ public class Checker implements Expression.Visitor<Type>
         return expression.getType();
     }
 
-    /**
-     * Helper method to get French operator names
-     */
     private String getOperatorName(TokenType tokenType)
     {
         return switch (tokenType)
@@ -264,9 +253,6 @@ public class Checker implements Expression.Visitor<Type>
         };
     }
 
-    /**
-     * Validates that an expression has a specific expected type
-     */
     public void validateType(Expression expression, Type expectedType)
     {
         Type actualType = check(expression).getType();
@@ -278,9 +264,6 @@ public class Checker implements Expression.Visitor<Type>
         }
     }
 
-    /**
-     * Validates that an expression has one of the expected types
-     */
     public void validateType(Expression expression, Type... expectedTypes)
     {
         Type actualType = check(expression).getType();

@@ -1,11 +1,14 @@
 package io.dream;
 
 import io.dream.ast.Expression;
+import io.dream.ast.Statement;
 import io.dream.error.RuntimeError;
 import io.dream.scanner.Token;
 import io.dream.types.*;
 
-public class Interpreter implements Expression.Visitor<Object>
+import java.util.List;
+
+public class Interpreter implements Expression.Visitor<Object>, Statement.Visitor<Void>
 {
     private final Checker typeChecker;
 
@@ -14,14 +17,34 @@ public class Interpreter implements Expression.Visitor<Object>
         this.typeChecker = new Checker();
     }
 
+    // Updated to accept List<Statement>
+    public void interpret(List<Statement> statements)
+    {
+        try
+        {
+            // First, type check all statements
+            for (Statement statement : statements)
+            {
+                typeChecker.check(statement);
+            }
+
+            // Then execute them
+            for (Statement statement : statements)
+            {
+                execute(statement);
+            }
+        } catch (RuntimeError re)
+        {
+            Main.runtimeError(re);
+        }
+    }
+
+    // Keep this for backward compatibility if needed
     public void interpret(Expression expression)
     {
         try
         {
-            // First, type check the expression
             Expression typedExpression = typeChecker.check(expression);
-
-            // Then evaluate it
             Object result = this.evaluate(typedExpression);
             System.out.println(this.stringify(result));
         } catch (RuntimeError re)
@@ -30,29 +53,25 @@ public class Interpreter implements Expression.Visitor<Object>
         }
     }
 
+    private void execute(Statement statement)
+    {
+        statement.accept(this);
+    }
+
+    @Override
+    public Void visitExpressionStmtStatement(Statement.ExpressionStmt statement)
+    {
+        Object value = evaluate(statement.expression);
+        System.out.println(stringify(value));
+        return null;
+    }
+
     private Object evaluate(Expression expression)
     {
         return expression.accept(this);
     }
 
-
-    private String stringify(Object value)
-    {
-        if (value == null) return "nil";
-
-        if (value instanceof Double)
-        {
-            String text = value.toString();
-            if (text.endsWith(".0"))
-            {
-                text = text.substring(0, text.length() - 2);
-            }
-            return text;
-        }
-
-        return value.toString();
-    }
-
+    // Rest of the Expression.Visitor methods remain the same...
     @Override
     public Object visitBinaryExpression(Expression.Binary expression)
     {
@@ -217,5 +236,22 @@ public class Interpreter implements Expression.Visitor<Object>
             return;
         }
         throw new RuntimeError(operator, "Les opérateurs doivent tous être des nombres.");
+    }
+
+    private String stringify(Object value)
+    {
+        if (value == null) return "nil";
+
+        if (value instanceof Double)
+        {
+            String text = value.toString();
+            if (text.endsWith(".0"))
+            {
+                text = text.substring(0, text.length() - 2);
+            }
+            return text;
+        }
+
+        return value.toString();
     }
 }

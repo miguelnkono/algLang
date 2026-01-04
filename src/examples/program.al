@@ -1,5 +1,5 @@
 
 Algorithme: test;
 Debut:
-    // seulement les expressions d'abord
+   2+2;
 Fin
