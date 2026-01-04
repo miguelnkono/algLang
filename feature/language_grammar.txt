@@ -6,3 +6,36 @@ term            -> factory (("+"| "-") factor)* ;
 factor          -> unary (("/"| "*") unary)* ;
 unary           -> ("!"| "-") unary | primary ;
 primary         -> NUMBER | STRING | "vrai" | "faux" | "nil" | "(" expression ")" ;
+
+---------------------------------------------------------------------------
+
+program           -> algorithm_header var_declaration? block
+algorithm_header  -> "Algorithme" ":" IDENTIFIER ";"
+var_declaration   -> "Var" ":" var_list
+var_list          -> var_decl ("," var_decl)*
+var_decl          -> IDENTIFIER ":" type ";"
+type              -> "entier" | "chaine_caractere" | "reel" | "booleen"
+block             -> "Debut" ":" statement* "Fin"
+statement         -> expression_stmt
+                    | write_stmt
+                    | read_stmt
+                    | assignment_stmt
+                    | block
+                    | if_stmt
+                    | while_stmt
+expression_stmt   -> expression ";"
+write_stmt        -> "Ecrire" "(" expression ("," expression)* ")" ";"
+read_stmt         -> "Lire" "(" IDENTIFIER ")" ";"
+assignment_stmt   -> IDENTIFIER "=" expression ";"
+if_stmt           -> "Si" "(" expression ")" "alors" statement ("Sinon" statement)?
+while_stmt        -> "TantQue" "(" expression ")" "faire" statement
+
+// Existing expression grammar (with some additions)
+expression        -> equality ;
+equality          -> comparison (("!=" | "==") comparison)* ;
+comparison        -> term ((">" | ">=" | "<" | "<=") term)* ;
+term              -> factor (("+" | "-") factor)* ;
+factor            -> unary (("/" | "*") unary)* ;
+unary             -> ("!" | "-") unary | primary ;
+primary           -> NUMBER | STRING | "vrai" | "faux" | "nil"
+                    | IDENTIFIER | "(" expression ")" ;
