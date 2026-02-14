@@ -13,7 +13,7 @@ program          -> algorithm_header block
 algorithm_header -> "Algorithme" ":" IDENTIFIER ";"
 block            -> "Debut" ":" statement* "Fin"
 statement        -> expression ";"
-expression       -> equality
+expression       -> equality ;
 equality         -> comparison (("!=" | "==") comparison)*
 comparison       -> term ((">" | ">=" | "<" | "<=") term)*
 term             -> factor (("+" | "-") factor)*

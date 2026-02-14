@@ -40,18 +40,18 @@ public class Interpreter implements Expression.Visitor<Object>, Statement.Visito
     }
 
     // Keep this for backward compatibility if needed
-    public void interpret(Expression expression)
-    {
-        try
-        {
-            Expression typedExpression = typeChecker.check(expression);
-            Object result = this.evaluate(typedExpression);
-            System.out.println(this.stringify(result));
-        } catch (RuntimeError re)
-        {
-            Main.runtimeError(re);
-        }
-    }
+//    public void interpret(Expression expression)
+//    {
+//        try
+//        {
+//            Expression typedExpression = typeChecker.check(expression);
+//            Object result = this.evaluate(typedExpression);
+//            System.out.println(this.stringify(result));
+//        } catch (RuntimeError re)
+//        {
+//            Main.runtimeError(re);
+//        }
+//    }
 
     private void execute(Statement statement)
     {

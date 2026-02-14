@@ -56,7 +56,7 @@ public class Scanner
 
     /**
      * This function scan a single token and adds it to the tokens list
-     *
+     * return void
      */
     protected void scanToken()
     {
@@ -64,7 +64,7 @@ public class Scanner
         switch (c)
         {
             // single character token
-            // todo: I should find a way to switch accordingly to the --language flag.
+            // todo: I should find a way to switch accordingly to the --language flag on the case switch.
             // So for now please when using the interpreter use floating number according to the language level you set.
             case ',':
             {
@@ -113,7 +113,6 @@ public class Scanner
                 break;
 
             // double character tokens
-//            case '<': addToken(match('=') ?  LESS_OR_EQUAL : LESS); break;
             case '<':
                 if (match('='))
                 {

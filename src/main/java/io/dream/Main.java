@@ -1,6 +1,5 @@
 package io.dream;
 
-import io.dream.ast.Expression;
 import io.dream.ast.Statement;
 import io.dream.config.Config;
 import io.dream.error.RuntimeError;
@@ -19,10 +18,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 
-/**
- * This is the entry point of the entire interpreter.
- *
- */
 public class Main
 {
     private static boolean hadError = false;
@@ -39,7 +34,7 @@ public class Main
     {
         if (args.length > 2)
         {
-            System.out.format("Usage: algolang <script>.al\n");
+            System.out.format("Usage: alglang <script>.al\n");
             System.exit(64);
         } else if (args.length == 2)
         {

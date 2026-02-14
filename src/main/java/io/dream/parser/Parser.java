@@ -98,8 +98,7 @@ public class Parser
      */
     private Statement statement()
     {
-        Statement stmt = expressionStatement();
-        return stmt;
+        return expressionStatement();
     }
 
     /**
