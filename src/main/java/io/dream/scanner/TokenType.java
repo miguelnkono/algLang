@@ -33,6 +33,8 @@ public enum TokenType
     INTEGER_LITERAL,
     DOUBLE_LITERAL,
     STRING_LITERAL,
+    WRITE,
+    READ,
 
     // ambiguous
     INDENT,

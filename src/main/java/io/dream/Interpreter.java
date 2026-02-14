@@ -22,12 +22,6 @@ public class Interpreter implements Expression.Visitor<Object>, Statement.Visito
     {
         try
         {
-            // First, type check all statements
-            for (Statement statement : statements)
-            {
-                typeChecker.check(statement);
-            }
-
             // Then execute them
             for (Statement statement : statements)
             {
@@ -63,6 +57,12 @@ public class Interpreter implements Expression.Visitor<Object>, Statement.Visito
     {
         Object value = evaluate(statement.expression);
         System.out.println(stringify(value));
+        return null;
+    }
+
+    @Override
+    public Void visitWriteStatement(Statement.Write statement) {
+        System.out.println(stringify(evaluate(statement.expression)));
         return null;
     }
 
@@ -138,7 +138,16 @@ public class Interpreter implements Expression.Visitor<Object>, Statement.Visito
             case PLUS:
                 if (exprType.equals(TypeFactory.STRING))
                 {
-                    return (String) left + (String) right;
+                    if (left instanceof String && right instanceof String) {
+                        return left + (String) right;
+                    } else if (
+                            (left instanceof String && right instanceof Number) ||
+                            (left instanceof Number && right instanceof String)
+                    ) {
+                        return left + right.toString();
+                    } else {
+                        throw new RuntimeError(expression.operator, "Les opérandes doivent être des chaînes ou des nombres pour l'opérateur +.");
+                    }
                 } else if (exprType.equals(TypeFactory.INTEGER))
                 {
                     return (int) left + (int) right;

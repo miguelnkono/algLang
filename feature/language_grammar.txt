@@ -35,7 +35,6 @@ statement         -> expression_stmt
                     | write_stmt
                     | read_stmt
                     | assignment_stmt
-                    | block
                     | if_stmt
                     | while_stmt
 expression_stmt   -> expression ";"

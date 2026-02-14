@@ -9,6 +9,7 @@ public abstract class Statement
 {
 	public interface Visitor<R> {
 		 R visitExpressionStmtStatement (ExpressionStmt statement);
+		 R visitWriteStatement (Write statement);
 	}
 
     public static class ExpressionStmt extends Statement 
@@ -21,6 +22,21 @@ public abstract class Statement
 		@Override
 		public <R> R accept(Visitor<R> visitor) {
 			return visitor.visitExpressionStmtStatement(this);
+		}
+
+		public final Expression expression;
+    }
+
+    public static class Write extends Statement 
+    {
+        public Write (Expression expression)
+        {
+            this.expression = expression;
+        }
+
+		@Override
+		public <R> R accept(Visitor<R> visitor) {
+			return visitor.visitWriteStatement(this);
 		}
 
 		public final Expression expression;

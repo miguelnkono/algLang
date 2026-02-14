@@ -6,5 +6,7 @@ Algorithm: test;
 // Fin
 
 Begin:
-    2.2 + 3.3;
+    write(2.2 + 3.3);
+    write("cool, the write statement works great!");
+    write("result: " + (2.2 + 3.3));
 End

@@ -98,7 +98,22 @@ public class Parser
      */
     private Statement statement()
     {
-        return expressionStatement();
+        if (match(WRITE))
+        {
+            return writeStatement();
+        }
+
+        throw error(this.peek(), "Attend une instruction.");
+    }
+
+    private Statement writeStatement()
+    {
+        consume(LEFT_PAREN, "Attend '(' après 'ecrire'.");
+        Expression expression = expression();
+        consume(RIGHT_PAREN, "Attend ')' après l'expression à écrire.");
+        consume(SEMICOLON, "Attend ';' après l'instruction d'écriture.");
+
+        return new Statement.Write(expression);
     }
 
     /**

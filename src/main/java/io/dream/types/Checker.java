@@ -51,7 +51,13 @@ public class Checker implements Expression.Visitor<Type>, Statement.Visitor<Void
         // Type check the expression inside the statement
         Type exprType = statement.expression.accept(this);
         statement.expression.setType(exprType);
-        statement.setType(exprType); // Optional: set type on statement too
+        return null;
+    }
+
+    @Override
+    public Void visitWriteStatement(Statement.Write statement) {
+        Type exprType = statement.expression.accept(this);
+        statement.expression.setType(exprType);
         return null;
     }
 
@@ -80,6 +86,22 @@ public class Checker implements Expression.Visitor<Type>, Statement.Visitor<Void
                     resultType = TypeFactory.FLOATING;
                 } else if (expression.operator.type() == TokenType.PLUS &&
                         leftType.equals(TypeFactory.STRING) && rightType.equals(TypeFactory.STRING))
+                {
+                    resultType = TypeFactory.STRING;
+                } else if (expression.operator.type() == TokenType.PLUS &&
+                        leftType.equals(TypeFactory.STRING) && rightType.equals(TypeFactory.FLOATING))
+                {
+                    resultType = TypeFactory.STRING;
+                } else if (expression.operator.type() == TokenType.PLUS &&
+                        leftType.equals(TypeFactory.FLOATING) && rightType.equals(TypeFactory.STRING))
+                {
+                    resultType = TypeFactory.STRING;
+                } else if (expression.operator.type() == TokenType.PLUS &&
+                        leftType.equals(TypeFactory.INTEGER) && rightType.equals(TypeFactory.STRING))
+                {
+                    resultType = TypeFactory.STRING;
+                } else if (expression.operator.type() == TokenType.PLUS &&
+                        leftType.equals(TypeFactory.STRING) && rightType.equals(TypeFactory.INTEGER))
                 {
                     resultType = TypeFactory.STRING;
                 } else

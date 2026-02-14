@@ -151,7 +151,7 @@ public class Main
             try
             {
                 Checker typeChecker = new Checker();
-                typeChecker.check(expression); // This now checks List<Statement>
+                typeChecker.check(expression);
             } catch (Exception e)
             {
                 System.err.println("Erreur de type: " + e.getMessage());
