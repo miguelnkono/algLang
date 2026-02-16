@@ -10,6 +10,7 @@ public abstract class Statement
 	public interface Visitor<R> {
 		 R visitExpressionStmtStatement (ExpressionStmt statement);
 		 R visitWriteStatement (Write statement);
+		 R visitVariableDeclarationStatement (VariableDeclaration statement);
 	}
 
     public static class ExpressionStmt extends Statement 
@@ -40,6 +41,23 @@ public abstract class Statement
 		}
 
 		public final Expression expression;
+    }
+
+    public static class VariableDeclaration extends Statement 
+    {
+        public VariableDeclaration (Token name, Expression value)
+        {
+            this.name = name;
+            this.value = value;
+        }
+
+		@Override
+		public <R> R accept(Visitor<R> visitor) {
+			return visitor.visitVariableDeclarationStatement(this);
+		}
+
+		public final Token name;
+		public final Expression value;
     }
 
 	private Type type;

@@ -58,6 +58,8 @@ final public class Config
         keywords.put("integer", INTEGER);
         keywords.put("real", DOUBLE);
         keywords.put("string", STRING);
+        keywords.put("char", CHARACTER);
+        keywords.put("boolean", BOOLEAN);
         keywords.put("write", WRITE);
         keywords.put("read", READ);
 
@@ -85,6 +87,8 @@ final public class Config
         keywords.put("entier", INTEGER);
         keywords.put("reel", DOUBLE);
         keywords.put("chaine_character", STRING);
+        keywords.put("caracter", CHARACTER);
+        keywords.put("booleen", BOOLEAN);
         keywords.put("ecrire", WRITE);
         keywords.put("lire", READ);
 

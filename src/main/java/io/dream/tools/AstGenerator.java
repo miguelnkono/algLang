@@ -30,7 +30,8 @@ public class AstGenerator
         // the statement
         defineAst(outputDirectory, "Statement", Arrays.asList(
                 "ExpressionStmt: Expression expression",
-                "Write: Expression expression"
+                "Write: Expression expression",
+                "VariableDeclaration: Token name, Expression value"
         ));
     }
 

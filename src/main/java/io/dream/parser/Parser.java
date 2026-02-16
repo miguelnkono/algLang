@@ -58,7 +58,36 @@ public class Parser
     private List<Statement> program()
     {
         algorithmHeader();
+
+        // variable declaration section is optional
+        if (match(VARIABLE)) {
+            var_list();
+        }
+
         return block();
+    }
+
+    private void var_list() {
+        consume(COLON, "Attend ':' après 'Variables'.");
+
+        // we can declare multiple variables, so we loop until we find the beginning of the block.
+        while (!check(BEGIN) && !isAtEnd()) {
+            var_decl();
+        }
+    }
+
+    private void var_decl() {
+        Token name = consume(IDENTIFIER, "Attend un nom de variable.");
+        consume(COLON, "Attend ':' après le nom de la variable.");
+        Token type = null;
+        if (match(INTEGER, DOUBLE, STRING, CHARACTER, BOOLEAN)) {
+            type = previous();
+        } else {
+            throw error(this.peek(), "Attends d'un type de variable.");
+        }
+        consume(SEMICOLON, "Attend ';' après la déclaration de variable.");
+
+        // TODO: store the variable declaration in a symbol table for later use in type checking and interpretation.
     }
 
     /**
