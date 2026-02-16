@@ -1,0 +1,192 @@
+name: Build and Release Native Binaries
+
+on:
+  push:
+    tags:
+      - 'v*'  # Triggers on version tags like v1.0.0, v1.1.0, etc.
+  workflow_dispatch:  # Allows manual triggering
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup GraalVM
+        uses: graalvm/setup-graalvm@v1
+        with:
+          java-version: '21'
+          distribution: 'graalvm-community'
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          native-image-job-reports: 'true'
+
+      - name: Build native executable (Linux)
+        run: |
+          mvn -Pnative clean package
+          chmod +x target/algolang
+
+      - name: Test native executable
+        run: |
+          echo 'Algorithme: test;
+          Variables:
+              x : entier;
+          Debut:
+              x <- 42;
+              ecrire("Test: " + x);
+          Fin' > test.al
+          ./target/algolang test.al
+
+      - name: Create tarball
+        run: |
+          cd target
+          tar -czf algolang-linux-x64.tar.gz algolang
+          cd ..
+
+      - name: Upload Linux artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: algolang-linux-x64
+          path: target/algolang-linux-x64.tar.gz
+
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup GraalVM
+        uses: graalvm/setup-graalvm@v1
+        with:
+          java-version: '21'
+          distribution: 'graalvm-community'
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          native-image-job-reports: 'true'
+
+      - name: Build native executable (Windows)
+        run: |
+          mvn -Pnative clean package
+
+      - name: Test native executable
+        run: |
+          echo "Algorithm: test;
+          Variables:
+              x : integer;
+          Begin:
+              x <- 42;
+              write(""Test: "" + x);
+          End" > test.al
+          .\target\algolang.exe test.al --language=1
+
+      - name: Create zip archive
+        run: |
+          cd target
+          Compress-Archive -Path algolang.exe -DestinationPath algolang-windows-x64.zip
+          cd ..
+
+      - name: Upload Windows artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: algolang-windows-x64
+          path: target/algolang-windows-x64.zip
+
+  build-macos:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup GraalVM
+        uses: graalvm/setup-graalvm@v1
+        with:
+          java-version: '21'
+          distribution: 'graalvm-community'
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          native-image-job-reports: 'true'
+
+      - name: Build native executable (macOS)
+        run: |
+          mvn -Pnative clean package
+          chmod +x target/algolang
+
+      - name: Test native executable
+        run: |
+          echo 'Algorithm: test;
+          Variables:
+              x : integer;
+          Begin:
+              x <- 42;
+              write("Test: " + x);
+          End' > test.al
+          ./target/algolang test.al --language=1
+
+      - name: Create tarball
+        run: |
+          cd target
+          tar -czf algolang-macos-x64.tar.gz algolang
+          cd ..
+
+      - name: Upload macOS artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: algolang-macos-x64
+          path: target/algolang-macos-x64.tar.gz
+
+  create-release:
+    needs: [build-linux, build-windows, build-macos]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            artifacts/algolang-linux-x64/algolang-linux-x64.tar.gz
+            artifacts/algolang-windows-x64/algolang-windows-x64.zip
+            artifacts/algolang-macos-x64/algolang-macos-x64.tar.gz
+          body: |
+            ## AlgoLang Native Binaries
+            
+            Download the appropriate binary for your platform:
+            
+            - **Linux (x64)**: `algolang-linux-x64.tar.gz`
+            - **Windows (x64)**: `algolang-windows-x64.zip`
+            - **macOS (x64)**: `algolang-macos-x64.tar.gz`
+            
+            ### Installation
+            
+            #### Linux / macOS
+            ```bash
+            tar -xzf algolang-*.tar.gz
+            chmod +x algolang
+            ./algolang your-program.al
+            ```
+            
+            #### Windows
+            ```cmd
+            # Extract the zip file
+            algolang.exe your-program.al
+            ```
+            
+            ### Usage
+            
+            ```bash
+            # French mode (default)
+            algolang program.al
+            
+            # English mode
+            algolang program.al --language=1
+            ```
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

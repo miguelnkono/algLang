@@ -149,15 +149,15 @@ class ScannerTest
 
         assertEquals(4, tokens.size()); // COMMA, SEMICOLON, COLON, EOF
 
-        // Verify tokens and their line numbers
+        // Verify tokens and their line numbers (line numbers are 1-based)
         assertEquals(COMMA, tokens.get(0).type());
-        assertEquals(0, tokens.get(0).line()); // First line
+        assertEquals(1, tokens.get(0).line()); // First line
 
         assertEquals(SEMICOLON, tokens.get(1).type());
-        assertEquals(1, tokens.get(1).line()); // Second line
+        assertEquals(2, tokens.get(1).line()); // Second line
 
         assertEquals(COLON, tokens.get(2).type());
-        assertEquals(2, tokens.get(2).line()); // Third line
+        assertEquals(3, tokens.get(2).line()); // Third line
     }
 
     @Test

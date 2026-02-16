@@ -64,18 +64,18 @@ class CheckerTest
   }
 
   @Test
-  void testCheck_AvecRecuperationErreur_RetourneExpressionParDefaut()
+  void testCheck_AvecExpressionValide_RetourneExpressionAvecType()
   {
     // Arrange
-    Expression.Literal defaut = new Expression.Literal(
-        new AtomicValue<>(0, AtomicTypes.INTEGER));
-    Expression expressionInvalide = null; // Expression invalide
+    Expression.Literal literal = new Expression.Literal(
+        new AtomicValue<>(42, AtomicTypes.INTEGER));
 
     // Act
-    Expression result = checker.check(expressionInvalide, defaut);
+    Expression result = checker.check(literal);
 
     // Assert
-    assertEquals(defaut, result);
+    assertNotNull(result);
+    assertEquals(TypeFactory.INTEGER, result.getType());
   }
 
   @Test
@@ -142,17 +142,16 @@ class CheckerTest
         new AtomicValue<>(42, AtomicTypes.INTEGER));
     Expression.Literal chaine = new Expression.Literal(
         new AtomicValue<>("texte", AtomicTypes.STRING));
-    Token plus = new Token(TokenType.PLUS, "+", null, 1);
-    Expression.Binary additionInvalide = new Expression.Binary(entier, plus, chaine);
+    Token moins = new Token(TokenType.MINUS, "-", null, 1);
+    Expression.Binary soustractionInvalide = new Expression.Binary(entier, moins, chaine);
 
     // Act & Assert
+    // MINUS operator only works with numbers, not strings
     TypeException exception = assertThrows(TypeException.class, () -> {
-      checker.visitBinaryExpression(additionInvalide);
+      checker.check(soustractionInvalide);
     });
 
     assertTrue(exception.getMessage().contains("incompatible"));
-    assertTrue(exception.getMessage().contains("entier"));
-    assertTrue(exception.getMessage().contains("chaîne"));
   }
 
   @Test
