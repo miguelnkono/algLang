@@ -2,7 +2,14 @@
   <dictionary name="project">
     <words>
       <w>alglang</w>
+      <w>booleen</w>
+      <w>caracter</w>
+      <w>caractere</w>
+      <w>charactere</w>
+      <w>decl</w>
+      <w>ecrire</w>
       <w>english</w>
+      <w>l'interpreteur</w>
     </words>
   </dictionary>
 </component>

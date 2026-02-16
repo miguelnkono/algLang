@@ -5,6 +5,7 @@ import io.dream.config.Config;
 import io.dream.config.Messages;
 import io.dream.error.RuntimeError;
 import io.dream.parser.Parser;
+import io.dream.repl.EnhancedREPL;
 import io.dream.scanner.Scanner;
 import io.dream.scanner.Token;
 import io.dream.scanner.TokenType;
@@ -99,23 +100,8 @@ public class Main
 
     private static void runPrompt() throws IOException
     {
-        InputStreamReader input = new InputStreamReader(System.in);
-        BufferedReader reader = new BufferedReader(input);
-
-        for (; ; )
-        {
-            System.out.print("> ");
-            String line = reader.readLine();
-
-            if (line.contentEquals(".exit"))
-            {
-                System.out.println("Goodbye!");
-                break;
-            }
-
-            run(line);
-            hadError = false;
-        }
+        EnhancedREPL repl = new EnhancedREPL();
+        repl.start();
     }
 
     /**
@@ -169,6 +155,19 @@ public class Main
         {
             interpreter.interpret(statements);
         }
+    }
+
+    /**
+     * Public method for REPL to execute code
+     *
+     * @param code the code to execute
+     * @throws IOException if an I/O error occurs
+     */
+    public static void runCode(String code) throws IOException
+    {
+        run(code);
+        hadError = false;  // Reset error state for REPL
+        hadRuntimeError = false;
     }
 
     /**
