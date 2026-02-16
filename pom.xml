@@ -15,6 +15,9 @@
     <native.maven.plugin.version>0.10.2</native.maven.plugin.version>
     <imagename>algolang</imagename>
     <junit.version>5.10.1</junit.version>
+    <!-- Native Image build options -->
+    <native.build.args>--no-fallback --report-unsupported-elements-at-runtime -H:+ReportExceptionStackTraces --initialize-at-build-time=io.dream</native.build.args>
+    <native.optimization.level>2</native.optimization.level>
   </properties>
 
   <dependencies>
@@ -120,7 +123,7 @@
   </build>
 
   <profiles>
-    <!-- GraalVM Native Image Profile -->
+    <!-- GraalVM Native Image Profile - Standard Build -->
     <profile>
       <id>native</id>
       <build>
@@ -143,6 +146,84 @@
               <imageName>${imagename}</imageName>
               <mainClass>io.dream.Main</mainClass>
               <buildArgs>
+                <buildArg>--no-fallback</buildArg>
+                <buildArg>--report-unsupported-elements-at-runtime</buildArg>
+                <buildArg>-H:+ReportExceptionStackTraces</buildArg>
+                <buildArg>--initialize-at-build-time=io.dream</buildArg>
+              </buildArgs>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+
+    <!-- GraalVM Native Image Profile - Optimized Build -->
+    <profile>
+      <id>native-optimized</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.graalvm.buildtools</groupId>
+            <artifactId>native-maven-plugin</artifactId>
+            <version>${native.maven.plugin.version}</version>
+            <extensions>true</extensions>
+            <executions>
+              <execution>
+                <id>build-native</id>
+                <goals>
+                  <goal>compile-no-fork</goal>
+                </goals>
+                <phase>package</phase>
+              </execution>
+            </executions>
+            <configuration>
+              <imageName>${imagename}</imageName>
+              <mainClass>io.dream.Main</mainClass>
+              <buildArgs>
+                <!-- Optimization flags -->
+                <buildArg>-O3</buildArg>
+                <buildArg>-march=native</buildArg>
+                <buildArg>--gc=serial</buildArg>
+                <!-- Standard flags -->
+                <buildArg>--no-fallback</buildArg>
+                <buildArg>--report-unsupported-elements-at-runtime</buildArg>
+                <buildArg>-H:+ReportExceptionStackTraces</buildArg>
+                <buildArg>--initialize-at-build-time=io.dream</buildArg>
+              </buildArgs>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+
+    <!-- GraalVM Native Image Profile - Minimal Build (smallest size) -->
+    <profile>
+      <id>native-minimal</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.graalvm.buildtools</groupId>
+            <artifactId>native-maven-plugin</artifactId>
+            <version>${native.maven.plugin.version}</version>
+            <extensions>true</extensions>
+            <executions>
+              <execution>
+                <id>build-native</id>
+                <goals>
+                  <goal>compile-no-fork</goal>
+                </goals>
+                <phase>package</phase>
+              </execution>
+            </executions>
+            <configuration>
+              <imageName>${imagename}</imageName>
+              <mainClass>io.dream.Main</mainClass>
+              <buildArgs>
+                <!-- Minimal size options -->
+                <buildArg>-Oz</buildArg>
+                <buildArg>--gc=serial</buildArg>
+                <buildArg>-H:+RemoveUnusedSymbols</buildArg>
+                <!-- Standard flags -->
                 <buildArg>--no-fallback</buildArg>
                 <buildArg>--report-unsupported-elements-at-runtime</buildArg>
                 <buildArg>-H:+ReportExceptionStackTraces</buildArg>
