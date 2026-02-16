@@ -12,6 +12,7 @@ public abstract class Expression
 		 R visitGroupingExpression (Grouping expression);
 		 R visitUnaryExpression (Unary expression);
 		 R visitLiteralExpression (Literal expression);
+		 R visitVariableExpression (Variable expression);
 	}
 
     public static class Binary extends Expression 
@@ -78,6 +79,21 @@ public abstract class Expression
 		}
 
 		public final Value value;
+    }
+
+    public static class Variable extends Expression 
+    {
+        public Variable (Token name)
+        {
+            this.name = name;
+        }
+
+		@Override
+		public <R> R accept(Visitor<R> visitor) {
+			return visitor.visitVariableExpression(this);
+		}
+
+		public final Token name;
     }
 
 	private Type type;

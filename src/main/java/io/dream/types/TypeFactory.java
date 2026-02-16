@@ -1,5 +1,7 @@
 package io.dream.types;
 
+import io.dream.config.Messages;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -30,7 +32,7 @@ public class TypeFactory
         Type type = types.get(atomicType);
         if (type == null)
         {
-            throw new IllegalArgumentException("Type basique non reconnu: " + atomicType);
+            throw new IllegalArgumentException(Messages.unrecognizedAtomicType(atomicType.toString()));
         }
         return type;
     }

@@ -2,15 +2,27 @@ package io.dream.types;
 
 import io.dream.ast.Expression;
 import io.dream.ast.Statement;
+import io.dream.config.Messages;
 import io.dream.error.TypeException;
 import io.dream.scanner.TokenType;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class Checker implements Expression.Visitor<Type>, Statement.Visitor<Void>
 {
+    private final Map<String, Type> symbolTable;
+
     public Checker()
-    { }
+    {
+        this.symbolTable = new HashMap<>();
+    }
+
+    public Checker(Map<String, Type> symbolTable)
+    {
+        this.symbolTable = symbolTable;
+    }
 
     // New: Check a list of statements
     public void check(List<Statement> statements)
@@ -41,7 +53,7 @@ public class Checker implements Expression.Visitor<Type>, Statement.Visitor<Void
             throw e;
         } catch (Exception e)
         {
-            throw new TypeException("Échec de la vérification des types: " + e.getMessage());
+            throw new TypeException(Messages.typeCheckingFailed(e.getMessage()));
         }
     }
 
@@ -58,6 +70,61 @@ public class Checker implements Expression.Visitor<Type>, Statement.Visitor<Void
     public Void visitWriteStatement(Statement.Write statement) {
         Type exprType = statement.expression.accept(this);
         statement.expression.setType(exprType);
+        return null;
+    }
+
+    @Override
+    public Void visitVariableDeclarationStatement(Statement.VariableDeclaration statement)
+    {
+        // Type check the initializer expression if present
+        if (statement.value != null) {
+            Type valueType = statement.value.accept(this);
+            statement.value.setType(valueType);
+
+            // Get the declared type from symbol table
+            Type declaredType = symbolTable.get(statement.name.lexeme());
+            if (declaredType == null) {
+                throw new TypeException(
+                        Messages.variableNotDeclared(statement.name.lexeme()),
+                        statement.name
+                );
+            }
+
+            // Check type compatibility
+            if (!declaredType.equals(valueType)) {
+                throw new TypeException(
+                        Messages.typeIncompatibility(declaredType.toString(), valueType.toString()),
+                        statement.name
+                );
+            }
+        }
+        return null;
+    }
+
+    @Override
+    public Void visitAssignmentStatement(Statement.Assignment statement)
+    {
+        // Check if variable is declared
+        Type varType = symbolTable.get(statement.name.lexeme());
+        if (varType == null) {
+            throw new TypeException(
+                    Messages.variableNotDeclared(statement.name.lexeme()),
+                    statement.name
+            );
+        }
+
+        // Type check the value expression
+        Type valueType = statement.value.accept(this);
+        statement.value.setType(valueType);
+
+        // Check type compatibility
+        if (!varType.equals(valueType)) {
+            throw new TypeException(
+                    Messages.typeIncompatibility(varType.toString(), valueType.toString()),
+                    statement.name
+            );
+        }
+
         return null;
     }
 
@@ -104,13 +171,28 @@ public class Checker implements Expression.Visitor<Type>, Statement.Visitor<Void
                         leftType.equals(TypeFactory.STRING) && rightType.equals(TypeFactory.INTEGER))
                 {
                     resultType = TypeFactory.STRING;
+                } else if (expression.operator.type() == TokenType.PLUS &&
+                        leftType.equals(TypeFactory.STRING) && rightType.equals(TypeFactory.CHAR))
+                {
+                    resultType = TypeFactory.STRING;
+                } else if (expression.operator.type() == TokenType.PLUS &&
+                        leftType.equals(TypeFactory.CHAR) && rightType.equals(TypeFactory.STRING))
+                {
+                    resultType = TypeFactory.STRING;
+                } else if (expression.operator.type() == TokenType.PLUS &&
+                        leftType.equals(TypeFactory.STRING) && rightType.equals(TypeFactory.BOOLEAN))
+                {
+                    resultType = TypeFactory.STRING;
+                } else if (expression.operator.type() == TokenType.PLUS &&
+                        leftType.equals(TypeFactory.BOOLEAN) && rightType.equals(TypeFactory.STRING))
+                {
+                    resultType = TypeFactory.STRING;
                 } else
                 {
                     String operatorName = getOperatorName(expression.operator.type());
                     throw new TypeException(
-                            String.format("Opérateur '%s' incompatible avec les types %s et %s. " +
-                                            "Les opérandes doivent être deux nombres ou deux chaînes de caractères.",
-                                    operatorName, leftType, rightType),
+                            Messages.operatorIncompatibleWithTypes(operatorName, leftType.toString(), rightType.toString(),
+                                    Messages.operatorRequirementNumbers()),
                             expression.operator
                     );
                 }
@@ -126,9 +208,8 @@ public class Checker implements Expression.Visitor<Type>, Statement.Visitor<Void
                 {
                     String operatorName = getOperatorName(expression.operator.type());
                     throw new TypeException(
-                            String.format("Opérateur de comparaison '%s' incompatible avec les types %s et %s. " +
-                                            "Les opérandes doivent être des nombres.",
-                                    operatorName, leftType, rightType),
+                            Messages.operatorIncompatibleWithTypes(operatorName, leftType.toString(), rightType.toString(),
+                                    Messages.operatorRequirementComparison()),
                             expression.operator
                     );
                 }
@@ -143,9 +224,8 @@ public class Checker implements Expression.Visitor<Type>, Statement.Visitor<Void
                 {
                     String operatorName = getOperatorName(expression.operator.type());
                     throw new TypeException(
-                            String.format("Opérateur d'égalité '%s' incompatible avec les types %s et %s. " +
-                                            "Les opérandes doivent être du même type.",
-                                    operatorName, leftType, rightType),
+                            Messages.operatorIncompatibleWithTypes(operatorName, leftType.toString(), rightType.toString(),
+                                    Messages.operatorRequirementEquality()),
                             expression.operator
                     );
                 }
@@ -153,7 +233,7 @@ public class Checker implements Expression.Visitor<Type>, Statement.Visitor<Void
 
             default:
                 throw new TypeException(
-                        String.format("Opérateur binaire non supporté: %s", expression.operator.type()),
+                        Messages.unsupportedBinaryOperator(expression.operator.type().toString()),
                         expression.operator
                 );
         }
@@ -190,9 +270,8 @@ public class Checker implements Expression.Visitor<Type>, Statement.Visitor<Void
                 } else
                 {
                     throw new TypeException(
-                            String.format("Opérateur unaire '-' incompatible avec le type %s. " +
-                                            "L'opérande doit être un nombre (entier ou réel).",
-                                    rightType),
+                            Messages.unaryOperatorIncompatible("-", rightType.toString(),
+                                    Messages.unaryMinusRequirement()),
                             expression.operator
                     );
                 }
@@ -205,9 +284,8 @@ public class Checker implements Expression.Visitor<Type>, Statement.Visitor<Void
                 } else
                 {
                     throw new TypeException(
-                            String.format("Opérateur logique '!' incompatible avec le type %s. " +
-                                            "L'opérande doit être un booléen.",
-                                    rightType),
+                            Messages.unaryOperatorIncompatible("!", rightType.toString(),
+                                    Messages.unaryBangRequirement()),
                             expression.operator
                     );
                 }
@@ -215,7 +293,7 @@ public class Checker implements Expression.Visitor<Type>, Statement.Visitor<Void
 
             default:
                 throw new TypeException(
-                        String.format("Opérateur unaire non supporté: %s", expression.operator.type()),
+                        Messages.unsupportedUnaryOperator(expression.operator.type().toString()),
                         expression.operator
                 );
         }
@@ -235,10 +313,22 @@ public class Checker implements Expression.Visitor<Type>, Statement.Visitor<Void
             expression.setType(type);
             return type;
         }
-        throw new TypeException(
-                "Valeur littérale de type non supporté. " +
-                        "Seules les valeurs atomiques (entier, réel, chaîne, caractère, booléen) sont autorisées."
-        );
+        throw new TypeException(Messages.unsupportedLiteralType());
+    }
+
+    @Override
+    public Type visitVariableExpression(Expression.Variable expression)
+    {
+        // Look up the variable type in the symbol table
+        Type type = symbolTable.get(expression.name.lexeme());
+        if (type == null) {
+            throw new TypeException(
+                    Messages.variableNotDeclared(expression.name.lexeme()),
+                    expression.name
+            );
+        }
+        expression.setType(type);
+        return type;
     }
 
     // Utility methods remain the same...
@@ -251,7 +341,7 @@ public class Checker implements Expression.Visitor<Type>, Statement.Visitor<Void
     {
         if (expression.getType() == null)
         {
-            throw new TypeException("L'expression n'a pas été vérifiée par le vérificateur de types.");
+            throw new TypeException(Messages.expressionNotTypeChecked());
         }
         return expression.getType();
     }
@@ -281,7 +371,7 @@ public class Checker implements Expression.Visitor<Type>, Statement.Visitor<Void
         if (!actualType.equals(expectedType))
         {
             throw new TypeException(
-                    String.format("Type attendu: %s, mais obtenu: %s", expectedType, actualType)
+                    Messages.expectedTypeButGot(expectedType.toString(), actualType.toString())
             );
         }
     }
@@ -297,8 +387,7 @@ public class Checker implements Expression.Visitor<Type>, Statement.Visitor<Void
             }
         }
         throw new TypeException(
-                String.format("Type %s non autorisé. Types attendus: %s",
-                        actualType, java.util.Arrays.toString(expectedTypes))
+                Messages.typeNotAllowed(actualType.toString(), java.util.Arrays.toString(expectedTypes))
         );
     }
 }

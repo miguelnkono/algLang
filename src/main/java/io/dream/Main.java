@@ -2,6 +2,7 @@ package io.dream;
 
 import io.dream.ast.Statement;
 import io.dream.config.Config;
+import io.dream.config.Messages;
 import io.dream.error.RuntimeError;
 import io.dream.parser.Parser;
 import io.dream.scanner.Scanner;
@@ -22,7 +23,7 @@ public class Main
 {
     private static boolean hadError = false;
     private static boolean hadRuntimeError = false;
-    private static Interpreter interpreter = new Interpreter();
+    private static Interpreter interpreter = null;
 
     /**
      * The entry point of application.
@@ -144,17 +145,21 @@ public class Main
         List<Token> tokens = scanner.scanTokens();
 
         Parser parser = new Parser(tokens);
-        List<Statement> expression = parser.parse();
+        List<Statement> statements = parser.parse();
 
         if (!hadError)
         {
             try
             {
-                Checker typeChecker = new Checker();
-                typeChecker.check(expression);
+                // Create type checker with symbol table from parser
+                Checker typeChecker = new Checker(parser.getSymbolTable());
+                typeChecker.check(statements);
+
+                // Create interpreter with symbol table
+                interpreter = new Interpreter(parser.getSymbolTable());
             } catch (Exception e)
             {
-                System.err.println("Erreur de type: " + e.getMessage());
+                System.err.println(Messages.typeError() + e.getMessage());
                 hadError = true;
                 return;
             }
@@ -162,7 +167,7 @@ public class Main
 
         if (!hadError)
         {
-            interpreter.interpret(expression); // This now accepts List<Statement>
+            interpreter.interpret(statements);
         }
     }
 
@@ -190,7 +195,7 @@ public class Main
      */
     private static void report(int line, String where, String message)
     {
-        System.err.format("[ligne %d ] Erreur : %s :  %s\n", line, where, message);
+        System.err.format("%s :  %s\n", Messages.errorPrefix(line, where), message);
         Main.hadError = true;
     }
 
@@ -211,16 +216,16 @@ public class Main
     {
         if (token.type() == TokenType.EOF)
         {
-            report(token.line(), " à la fin", message);
+            report(token.line(), Messages.atEnd(), message);
         } else
         {
-            report(token.line(), " à '" + token.lexeme() + "'", message);
+            report(token.line(), Messages.atToken(token.lexeme()), message);
         }
     }
 
     public static void runtimeError(RuntimeError error)
     {
-        System.err.println(error.getMessage() + "\n[Ligne " + error.token().line() + "]");
+        System.err.println(error.getMessage() + "\n" + Messages.linePrefix(error.token().line()));
         hadRuntimeError = true;
     }
 }

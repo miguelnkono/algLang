@@ -2,6 +2,7 @@ package io.dream.scanner;
 
 import io.dream.Main;
 import io.dream.config.Config;
+import io.dream.config.Messages;
 import io.dream.types.*;
 
 import java.util.ArrayList;
@@ -74,8 +75,7 @@ public class Scanner
                     break;
                 } else
                 {
-                    Main.error(line, "En utilisant le français comme langage de l'interpreteur tu dois utilisé la " +
-                            "virgule (,) pour définir les nombres réels.");
+                    Main.error(line, Messages.wrongDecimalSeparatorFrench());
                     break;
                 }
             }
@@ -87,8 +87,7 @@ public class Scanner
                     break;
                 } else
                 {
-                    Main.error(this.line, "When using the interpreter in english make sure to use the dot(.) to " +
-                            "define your real numbers(floating numbers and double numbers)");
+                    Main.error(this.line, Messages.wrongDecimalSeparatorEnglish());
                     break;
                 }
             }
@@ -178,6 +177,11 @@ public class Scanner
                 this.string();
                 break;
 
+            // scan character literals
+            case '\'':
+                this.character();
+                break;
+
             default:
                 if (this.isDigit(c))
                 {
@@ -187,7 +191,7 @@ public class Scanner
                     this.identifier();
                 } else
                 {
-                    Main.error(line, "Unsupported character.");
+                    Main.error(line, Messages.unsupportedCharacter());
                     break;
                 }
         }
@@ -265,7 +269,7 @@ public class Scanner
         // if we reach the end of the line but did not finish the string.
         if (this.isAtEnd())
         {
-            Main.error(line, "Unterminated string literal.");
+            Main.error(line, Messages.unterminatedString());
             return;
         }
 
@@ -274,6 +278,35 @@ public class Scanner
         String string = this.source.substring(start + 1, current - 1);
         AtomicValue<String> stringAtomicValue = new AtomicValue<>(string, AtomicTypes.STRING);
         this.addToken(STRING_LITERAL, stringAtomicValue);
+    }
+
+    /**
+     * This function scan through a character literal and construct one.
+     *
+     */
+    protected void character()
+    {
+        if (this.isAtEnd())
+        {
+            Main.error(line, Messages.unterminatedCharacter());
+            return;
+        }
+
+        // Get the character
+        char ch = this.advance();
+
+        // Check for closing quote
+        if (this.peek() != '\'')
+        {
+            Main.error(line, Messages.characterMustBeOne());
+            return;
+        }
+
+        // Consume the closing quote
+        this.advance();
+
+        AtomicValue<Character> charAtomicValue = new AtomicValue<>(ch, AtomicTypes.CHAR);
+        this.addToken(CHARACTER_LITERAL, charAtomicValue);
     }
 
     /**

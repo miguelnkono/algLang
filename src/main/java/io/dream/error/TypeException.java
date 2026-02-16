@@ -1,5 +1,6 @@
 package io.dream.error;
 
+import io.dream.config.Messages;
 import io.dream.scanner.Token;
 
 public class TypeException extends RuntimeException
@@ -11,6 +12,6 @@ public class TypeException extends RuntimeException
 
   public TypeException(String message, Token token)
   {
-    super(message + " à la ligne " + token.line());
+    super(message + Messages.atLine(token.line()));
   }
 }

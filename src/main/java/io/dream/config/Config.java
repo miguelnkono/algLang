@@ -86,8 +86,8 @@ final public class Config
         keywords.put("tableau", TABLE);
         keywords.put("entier", INTEGER);
         keywords.put("reel", DOUBLE);
-        keywords.put("chaine_character", STRING);
-        keywords.put("caracter", CHARACTER);
+        keywords.put("chaine_charactere", STRING);
+        keywords.put("caractere", CHARACTER);
         keywords.put("booleen", BOOLEAN);
         keywords.put("ecrire", WRITE);
         keywords.put("lire", READ);

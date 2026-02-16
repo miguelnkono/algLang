@@ -175,6 +175,11 @@ public class TypeSafeInterpreter implements Expression.Visitor<Object>
         return expression.value;
     }
 
+    @Override
+    public Object visitVariableExpression(Expression.Variable expression) {
+        return null;
+    }
+
     private boolean isTruth(Object value)
     {
         if (value == null) return false;

@@ -26,10 +26,11 @@ primary          -> NUMBER | STRING | "vrai" | "faux" | "nil"
 
 program           -> algorithm_header var_declaration? block
 algorithm_header  -> "Algorithme" ":" IDENTIFIER ";"
-var_declaration   -> "Var" ":" var_list
+var_declaration   -> "Variables" ":" var_list
 var_list          -> var_decl (var_decl)*
 var_decl          -> IDENTIFIER ":" type ";"
-type              -> "entier" | "chaine_caractere" | "reel" | "booleen"
+type              -> "entier" | "reel" | "chaine_charactere" | "caractere" | "booleen"
+assignment_stmt   -> IDENTIFIER "<-" expression ";"
 block             -> "Debut" ":" statement* "Fin"
 statement         -> expression_stmt
                     | write_stmt

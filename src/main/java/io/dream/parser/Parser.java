@@ -3,13 +3,18 @@ package io.dream.parser;
 import io.dream.Main;
 import io.dream.ast.Expression;
 import io.dream.ast.Statement;
+import io.dream.config.Messages;
 import io.dream.scanner.Token;
 import io.dream.scanner.TokenType;
 import io.dream.types.AtomicTypes;
 import io.dream.types.AtomicValue;
+import io.dream.types.Type;
+import io.dream.types.TypeFactory;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static io.dream.scanner.TokenType.*;
 
@@ -23,6 +28,9 @@ public class Parser
     // the list of all the tokens
     private final List<Token> tokens;
     private int current = 0;
+
+    // Symbol table to store variable declarations (name -> type)
+    private final Map<String, Type> symbolTable = new HashMap<>();
 
     /**
      * Instantiates a new Parser.
@@ -68,7 +76,7 @@ public class Parser
     }
 
     private void var_list() {
-        consume(COLON, "Attend ':' après 'Variables'.");
+        consume(COLON, Messages.expectColon("Variables"));
 
         // we can declare multiple variables, so we loop until we find the beginning of the block.
         while (!check(BEGIN) && !isAtEnd()) {
@@ -77,17 +85,37 @@ public class Parser
     }
 
     private void var_decl() {
-        Token name = consume(IDENTIFIER, "Attend un nom de variable.");
-        consume(COLON, "Attend ':' après le nom de la variable.");
+        Token name = consume(IDENTIFIER, Messages.expectVariableName());
+        consume(COLON, Messages.expectAfter(":", "variable name"));
         Token type = null;
-        if (match(INTEGER, DOUBLE, STRING, CHARACTER, BOOLEAN)) {
-            type = previous();
-        } else {
-            throw error(this.peek(), "Attends d'un type de variable.");
-        }
-        consume(SEMICOLON, "Attend ';' après la déclaration de variable.");
+        Type varType = null;
 
-        // TODO: store the variable declaration in a symbol table for later use in type checking and interpretation.
+        if (match(INTEGER)) {
+            type = previous();
+            varType = TypeFactory.INTEGER;
+        } else if (match(DOUBLE)) {
+            type = previous();
+            varType = TypeFactory.FLOATING;
+        } else if (match(STRING)) {
+            type = previous();
+            varType = TypeFactory.STRING;
+        } else if (match(CHARACTER)) {
+            type = previous();
+            varType = TypeFactory.CHAR;
+        } else if (match(BOOLEAN)) {
+            type = previous();
+            varType = TypeFactory.BOOLEAN;
+        } else {
+            throw error(this.peek(), Messages.expectVariableType());
+        }
+
+        consume(SEMICOLON, Messages.expectSemicolon("variable declaration"));
+
+        // Store the variable declaration in the symbol table
+        if (symbolTable.containsKey(name.lexeme())) {
+            throw error(name, Messages.variableAlreadyDeclared(name.lexeme()));
+        }
+        symbolTable.put(name.lexeme(), varType);
     }
 
     /**
@@ -96,10 +124,10 @@ public class Parser
      */
     private void algorithmHeader()
     {
-        consume(ALGORITHM, "Attend 'Algorithme' au début du programme.");
-        consume(COLON, "Attend ':' après 'Algorithme'.");
-        consume(IDENTIFIER, "Attend un nom d'algorithme après ':'.");
-        consume(SEMICOLON, "Attend ';' après le nom de l'algorithme.");
+        consume(ALGORITHM, Messages.expectAlgorithmKeyword());
+        consume(COLON, Messages.expectColon("Algorithm"));
+        consume(IDENTIFIER, Messages.expectAlgorithmName());
+        consume(SEMICOLON, Messages.expectSemicolon("algorithm name"));
     }
 
     /**
@@ -108,8 +136,8 @@ public class Parser
      */
     private List<Statement> block()
     {
-        consume(BEGIN, "Attend 'Debut' pour commencer le bloc.");
-        consume(COLON, "Attend ':' après 'Debut'.");
+        consume(BEGIN, Messages.expectBeginBlock());
+        consume(COLON, Messages.expectColon("Begin"));
 
         List<Statement> statements = new ArrayList<>();
         while (!check(END) && !isAtEnd())
@@ -117,13 +145,13 @@ public class Parser
             statements.add(statement());
         }
 
-        consume(END, "Attend 'Fin' pour terminer le bloc.");
+        consume(END, Messages.expectEndBlock());
         return statements;
     }
 
     /**
      * Parses a single statement.
-     * statement -> expression_stmt
+     * statement -> expression_stmt | write_stmt | assignment_stmt
      */
     private Statement statement()
     {
@@ -132,17 +160,37 @@ public class Parser
             return writeStatement();
         }
 
-        throw error(this.peek(), "Attend une instruction.");
+        // Check if it's an assignment (IDENTIFIER followed by ASSIGN)
+        if (check(IDENTIFIER))
+        {
+            // Look ahead to see if this is an assignment
+            if (peekAhead(1) != null && peekAhead(1).type() == ASSIGN)
+            {
+                return assignmentStatement();
+            }
+        }
+
+        throw error(this.peek(), Messages.expectStatement());
     }
 
     private Statement writeStatement()
     {
-        consume(LEFT_PAREN, "Attend '(' après 'ecrire'.");
+        consume(LEFT_PAREN, Messages.expectLeftParen("write"));
         Expression expression = expression();
-        consume(RIGHT_PAREN, "Attend ')' après l'expression à écrire.");
-        consume(SEMICOLON, "Attend ';' après l'instruction d'écriture.");
+        consume(RIGHT_PAREN, Messages.expectRightParen("expression to write"));
+        consume(SEMICOLON, Messages.expectSemicolon("write statement"));
 
         return new Statement.Write(expression);
+    }
+
+    private Statement assignmentStatement()
+    {
+        Token name = consume(IDENTIFIER, Messages.expectVariableName());
+        consume(ASSIGN, Messages.expectAssignOperator());
+        Expression value = expression();
+        consume(SEMICOLON, Messages.expectSemicolon("assignment"));
+
+        return new Statement.Assignment(name, value);
     }
 
     /**
@@ -152,7 +200,7 @@ public class Parser
     private Statement expressionStatement()
     {
         Expression expr = expression();
-        consume(SEMICOLON, "Attend ';' après l'expression.");
+        consume(SEMICOLON, Messages.expectSemicolon("expression"));
         return new Statement.ExpressionStmt(expr);
     }
 
@@ -266,19 +314,25 @@ public class Parser
         if (this.match(NIL)) return new Expression.Literal(new AtomicValue<Void>(null, AtomicTypes.VOID));
 
         // for numbers and strings only (no variables yet)
-        if (this.match(STRING_LITERAL, INTEGER_LITERAL, DOUBLE_LITERAL))
+        if (this.match(STRING_LITERAL, INTEGER_LITERAL, DOUBLE_LITERAL, CHARACTER_LITERAL))
         {
             return new Expression.Literal(this.previous().literal());
+        }
+
+        // Handle variable references
+        if (this.match(IDENTIFIER))
+        {
+            return new Expression.Variable(this.previous());
         }
 
         if (this.match(LEFT_PAREN))
         {
             Expression expression = this.expression();
-            consume(RIGHT_PAREN, "Attend ')' après l'expression.");
+            consume(RIGHT_PAREN, Messages.expectRightParen("expression"));
             return new Expression.Grouping(expression);
         }
 
-        throw error(this.peek(), "Attends d'une expression.");
+        throw error(this.peek(), Messages.expectExpression());
     }
 
     /**
@@ -402,5 +456,28 @@ public class Parser
     private Token previous()
     {
         return this.tokens.get(this.current - 1);
+    }
+
+    /**
+     * This function peeks ahead n tokens without consuming them.
+     *
+     * @param n the number of tokens to look ahead
+     * @return the token n positions ahead, or null if out of bounds
+     */
+    private Token peekAhead(int n)
+    {
+        int index = this.current + n;
+        if (index >= this.tokens.size()) return null;
+        return this.tokens.get(index);
+    }
+
+    /**
+     * Get the symbol table containing variable declarations.
+     *
+     * @return the symbol table map
+     */
+    public Map<String, Type> getSymbolTable()
+    {
+        return symbolTable;
     }
 }

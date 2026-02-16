@@ -33,6 +33,7 @@ public enum TokenType
     INTEGER_LITERAL,
     DOUBLE_LITERAL,
     STRING_LITERAL,
+    CHARACTER_LITERAL,
     WRITE,
     READ,
 

@@ -2,19 +2,34 @@ package io.dream;
 
 import io.dream.ast.Expression;
 import io.dream.ast.Statement;
+import io.dream.config.Messages;
+import io.dream.environment.Environment;
 import io.dream.error.RuntimeError;
 import io.dream.scanner.Token;
 import io.dream.types.*;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class Interpreter implements Expression.Visitor<Object>, Statement.Visitor<Void>
 {
     private final Checker typeChecker;
+    private final Environment environment;
+    private final Map<String, Type> symbolTable;
 
     public Interpreter()
     {
         this.typeChecker = new Checker();
+        this.environment = new Environment();
+        this.symbolTable = new HashMap<>();
+    }
+
+    public Interpreter(Map<String, Type> symbolTable)
+    {
+        this.typeChecker = new Checker(symbolTable);
+        this.environment = new Environment();
+        this.symbolTable = symbolTable;
     }
 
     // Updated to accept List<Statement>
@@ -22,7 +37,16 @@ public class Interpreter implements Expression.Visitor<Object>, Statement.Visito
     {
         try
         {
-            // Then execute them
+            // Initialize all declared variables with their zero values
+            for (Map.Entry<String, Type> entry : symbolTable.entrySet())
+            {
+                String varName = entry.getKey();
+                Type varType = entry.getValue();
+                Value zeroValue = varType.zeroValue();
+                environment.define(varName, varType, zeroValue);
+            }
+
+            // Then execute the statements
             for (Statement statement : statements)
             {
                 execute(statement);
@@ -63,6 +87,70 @@ public class Interpreter implements Expression.Visitor<Object>, Statement.Visito
     @Override
     public Void visitWriteStatement(Statement.Write statement) {
         System.out.println(stringify(evaluate(statement.expression)));
+        return null;
+    }
+
+    @Override
+    public Void visitVariableDeclarationStatement(Statement.VariableDeclaration statement)
+    {
+        Value value = null;
+
+        // If there's an initializer, evaluate it
+        if (statement.value != null) {
+            Object evaluatedValue = evaluate(statement.value);
+            Type varType = statement.value.getType();
+
+            // Wrap the value in an AtomicValue
+            if (varType.equals(TypeFactory.INTEGER)) {
+                value = new AtomicValue<>((Integer) evaluatedValue, AtomicTypes.INTEGER);
+            } else if (varType.equals(TypeFactory.FLOATING)) {
+                value = new AtomicValue<>((Double) evaluatedValue, AtomicTypes.FLOATING);
+            } else if (varType.equals(TypeFactory.STRING)) {
+                value = new AtomicValue<>((String) evaluatedValue, AtomicTypes.STRING);
+            } else if (varType.equals(TypeFactory.CHAR)) {
+                value = new AtomicValue<>((Character) evaluatedValue, AtomicTypes.CHAR);
+            } else if (varType.equals(TypeFactory.BOOLEAN)) {
+                value = new AtomicValue<>((Boolean) evaluatedValue, AtomicTypes.BOOLEAN);
+            }
+        } else {
+            // Use zero value from type
+            Type varType = statement.getType();
+            if (varType != null) {
+                value = varType.zeroValue();
+            }
+        }
+
+        Type varType = statement.getType();
+        if (varType == null) {
+            // Get type from the expression
+            varType = statement.value != null ? statement.value.getType() : TypeFactory.VOID;
+        }
+
+        environment.define(statement.name.lexeme(), varType, value);
+        return null;
+    }
+
+    @Override
+    public Void visitAssignmentStatement(Statement.Assignment statement)
+    {
+        Object evaluatedValue = evaluate(statement.value);
+        Type varType = statement.value.getType();
+
+        // Wrap the value in an AtomicValue
+        Value value = null;
+        if (varType.equals(TypeFactory.INTEGER)) {
+            value = new AtomicValue<>((Integer) evaluatedValue, AtomicTypes.INTEGER);
+        } else if (varType.equals(TypeFactory.FLOATING)) {
+            value = new AtomicValue<>((Double) evaluatedValue, AtomicTypes.FLOATING);
+        } else if (varType.equals(TypeFactory.STRING)) {
+            value = new AtomicValue<>((String) evaluatedValue, AtomicTypes.STRING);
+        } else if (varType.equals(TypeFactory.CHAR)) {
+            value = new AtomicValue<>((Character) evaluatedValue, AtomicTypes.CHAR);
+        } else if (varType.equals(TypeFactory.BOOLEAN)) {
+            value = new AtomicValue<>((Boolean) evaluatedValue, AtomicTypes.BOOLEAN);
+        }
+
+        environment.update_value(statement.name.lexeme(), value);
         return null;
     }
 
@@ -138,16 +226,22 @@ public class Interpreter implements Expression.Visitor<Object>, Statement.Visito
             case PLUS:
                 if (exprType.equals(TypeFactory.STRING))
                 {
-                    if (left instanceof String && right instanceof String) {
-                        return left + (String) right;
-                    } else if (
-                            (left instanceof String && right instanceof Number) ||
-                            (left instanceof Number && right instanceof String)
-                    ) {
-                        return left + right.toString();
+                    // Handle string concatenation with various types
+                    String result = "";
+
+                    if (left instanceof String) {
+                        result += (String) left;
                     } else {
-                        throw new RuntimeError(expression.operator, "Les opérandes doivent être des chaînes ou des nombres pour l'opérateur +.");
+                        result += String.valueOf(left);
                     }
+
+                    if (right instanceof String) {
+                        result += (String) right;
+                    } else {
+                        result += String.valueOf(right);
+                    }
+
+                    return result;
                 } else if (exprType.equals(TypeFactory.INTEGER))
                 {
                     return (int) left + (int) right;
@@ -216,6 +310,19 @@ public class Interpreter implements Expression.Visitor<Object>, Statement.Visito
         return expression.value;
     }
 
+    @Override
+    public Object visitVariableExpression(Expression.Variable expression)
+    {
+        Value value = environment.get_value(expression.name.lexeme());
+
+        // Extract the actual value from AtomicValue
+        if (value instanceof AtomicValue) {
+            return ((AtomicValue<?>) value).getValue();
+        }
+
+        return value;
+    }
+
     private boolean isTruth(Object value)
     {
         if (value == null) return false;
@@ -234,7 +341,7 @@ public class Interpreter implements Expression.Visitor<Object>, Statement.Visito
     {
         if (!(operand instanceof Number))
         {
-            throw new RuntimeError(operator, "L'opérateur doit être un nombre");
+            throw new RuntimeError(operator, Messages.operandMustBeNumber());
         }
     }
 
@@ -244,7 +351,7 @@ public class Interpreter implements Expression.Visitor<Object>, Statement.Visito
         {
             return;
         }
-        throw new RuntimeError(operator, "Les opérateurs doivent tous être des nombres.");
+        throw new RuntimeError(operator, Messages.operandsMustBeNumbers());
     }
 
     private String stringify(Object value)

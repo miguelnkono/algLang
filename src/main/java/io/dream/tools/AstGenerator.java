@@ -24,14 +24,16 @@ public class AstGenerator
                 "Binary : Expression left, Token operator, Expression right",
                 "Grouping : Expression expression",
                 "Unary : Token operator, Expression right",
-                "Literal : Value value"
+                "Literal : Value value",
+                "Variable : Token name"
         ));
 
         // the statement
         defineAst(outputDirectory, "Statement", Arrays.asList(
                 "ExpressionStmt: Expression expression",
                 "Write: Expression expression",
-                "VariableDeclaration: Token name, Expression value"
+                "VariableDeclaration: Token name, Expression value",
+                "Assignment: Token name, Expression value"
         ));
     }
 
