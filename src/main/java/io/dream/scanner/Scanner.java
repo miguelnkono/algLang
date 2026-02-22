@@ -1,16 +1,47 @@
 package io.dream.scanner;
 
-import io.dream.Main;
-import io.dream.config.Config;
-import io.dream.config.Messages;
-import io.dream.types.*;
+import static io.dream.scanner.TokenType.ASSIGN;
+import static io.dream.scanner.TokenType.BANG;
+import static io.dream.scanner.TokenType.CHARACTER_LITERAL;
+import static io.dream.scanner.TokenType.COLON;
+import static io.dream.scanner.TokenType.COMMA;
+import static io.dream.scanner.TokenType.DIFF;
+import static io.dream.scanner.TokenType.DOUBLE_LITERAL;
+import static io.dream.scanner.TokenType.EOF;
+import static io.dream.scanner.TokenType.EQUAL;
+import static io.dream.scanner.TokenType.EQUAL_EQUAL;
+import static io.dream.scanner.TokenType.GREATER;
+import static io.dream.scanner.TokenType.GREATER_OR_EQUAL;
+import static io.dream.scanner.TokenType.IDENTIFIER;
+import static io.dream.scanner.TokenType.INDENT;
+import static io.dream.scanner.TokenType.INTEGER_LITERAL;
+import static io.dream.scanner.TokenType.LEFT_BRACKET;
+import static io.dream.scanner.TokenType.LEFT_PAREN;
+import static io.dream.scanner.TokenType.LESS;
+import static io.dream.scanner.TokenType.LESS_OR_EQUAL;
+import static io.dream.scanner.TokenType.MINUS;
+import static io.dream.scanner.TokenType.MINUS_MINUS;
+import static io.dream.scanner.TokenType.PLUS;
+import static io.dream.scanner.TokenType.PLUS_PLUS;
+import static io.dream.scanner.TokenType.RIGHT_BRACKET;
+import static io.dream.scanner.TokenType.RIGHT_PAREN;
+import static io.dream.scanner.TokenType.SEMICOLON;
+import static io.dream.scanner.TokenType.SLASH;
+import static io.dream.scanner.TokenType.STAR;
+import static io.dream.scanner.TokenType.STAR_STAR;
+import static io.dream.scanner.TokenType.STRING_LITERAL;
 
 import java.util.ArrayList;
-import java.util.HashMap;
+// import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static io.dream.scanner.TokenType.*;
+import io.dream.Main;
+import io.dream.config.Config;
+import io.dream.config.Messages;
+import io.dream.types.AtomicTypes;
+import io.dream.types.AtomicValue;
+import io.dream.types.Value;
 
 /**
  * The type Scanner.
@@ -75,7 +106,7 @@ public class Scanner
                     break;
                 } else
                 {
-                    Main.error(line, Messages.wrongDecimalSeparatorFrench());
+                    Main.error(line, Messages.wrongDecimalSeparatorEnglish());
                     break;
                 }
             }
@@ -87,7 +118,7 @@ public class Scanner
                     break;
                 } else
                 {
-                    Main.error(this.line, Messages.wrongDecimalSeparatorEnglish());
+                    Main.error(this.line, Messages.wrongDecimalSeparatorFrench());
                     break;
                 }
             }
@@ -239,15 +270,13 @@ public class Scanner
                     this.source.substring(this.start, this.current).replace(',', '.') :
                     this.source.substring(this.start, this.current);
             double doubleValue = Double.parseDouble(number_digit);
-            AtomicValue<Double> doubleAtomicValue = new AtomicValue<>(doubleValue, AtomicTypes.FLOATING);
-            this.addToken(DOUBLE_LITERAL, doubleAtomicValue);
+            this.addToken(DOUBLE_LITERAL, new AtomicValue<Double>(doubleValue, AtomicTypes.FLOATING));
         } else
         {
 
             int integerValue = Integer.parseInt(this.source.substring(this.start,
                     this.current));
-            AtomicValue<Integer> integerAtomicValue = new AtomicValue<>(integerValue, AtomicTypes.INTEGER);
-            this.addToken(INTEGER_LITERAL, integerAtomicValue);
+            this.addToken(INTEGER_LITERAL, new AtomicValue<Integer>(integerValue, AtomicTypes.INTEGER));
         }
     }
 
@@ -259,6 +288,7 @@ public class Scanner
     {
         while (this.peek() != '"' && !this.isAtEnd())
         {
+            // found a new line.
             if (this.peek() == '\n')
             {
                 this.line++;
@@ -276,8 +306,7 @@ public class Scanner
         // advance to consume the end '"' character of the string.
         this.advance();
         String string = this.source.substring(start + 1, current - 1);
-        AtomicValue<String> stringAtomicValue = new AtomicValue<>(string, AtomicTypes.STRING);
-        this.addToken(STRING_LITERAL, stringAtomicValue);
+        this.addToken(STRING_LITERAL, new AtomicValue<>(string, AtomicTypes.STRING));
     }
 
     /**

@@ -181,6 +181,7 @@ public class EnhancedREPL {
         return upper.startsWith("ALGORITHME:") || upper.startsWith("ALGORITHM:");
     }
 
+    // TODO: Will end a multi line with double enter click, need to fix it.
     private boolean isMultiLineEnd(String line) {
         String upper = line.toUpperCase();
         return upper.equals("FIN") || upper.equals("END");
@@ -262,7 +263,7 @@ public class EnhancedREPL {
         String banner = Config.getLanguage()
                 ? """
             ╔════════════════════════════════════════════════════╗
-            ║          AlgoLang - Interpréteur Interactif       ║
+            ║          AlgoLang - Interpréteur Interactif        ║
             ║                   Version 1.0.0                    ║
             ╚════════════════════════════════════════════════════╝
             
@@ -270,7 +271,7 @@ public class EnhancedREPL {
             """
                 : """
             ╔════════════════════════════════════════════════════╗
-            ║          AlgoLang - Interactive Interpreter       ║
+            ║          AlgoLang - Interactive Interpreter        ║
             ║                   Version 1.0.0                    ║
             ╚════════════════════════════════════════════════════╝
             

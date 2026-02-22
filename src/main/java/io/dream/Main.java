@@ -11,9 +11,7 @@ import io.dream.scanner.Token;
 import io.dream.scanner.TokenType;
 import io.dream.types.Checker;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -42,8 +40,7 @@ public class Main
         {
             if (args[1].startsWith("--language="))
             {
-                String level = args[1].split("=")[1].trim();
-                int language_level = Integer.parseInt(level);
+                int language_level = Integer.parseInt(args[1].split("=")[1].trim());
                 if (language_level != 0 && language_level != 1)
                 {
                     System.err.println("You should provide 0 or 1");
