@@ -72,6 +72,12 @@ public class Messages
                 : "Expect '(' after '" + after + "'.";
     }
 
+    public static String expectThen(String after) {
+        return Config.getLanguage()
+                ? "Attend 'alors' après '" + after + "'."
+                : "Expect 'then' after '" + after + "'.";
+    }
+
     public static String expectRightParen(String after) {
         return Config.getLanguage()
                 ? "Attend ')' après " + after + "."

@@ -128,6 +128,22 @@ public class Checker implements Expression.Visitor<Type>, Statement.Visitor<Void
         return null;
     }
 
+    @Override
+    public Void visitIfStatement(Statement.If statement) {
+        // Type check the condition expression
+        Type conditionType = statement.condition.accept(this);
+        statement.condition.setType(conditionType);
+
+        // check to see if the condition is a boolean type
+        if (!conditionType.equals(TypeFactory.BOOLEAN)) {
+            throw new TypeException(
+                    Messages.typeIncompatibility(conditionType.toString(), TypeFactory.BOOLEAN.toString())
+            );
+        }
+
+        return null;
+    }
+
     // Rest of the Expression.Visitor methods remain exactly the same...
     @Override
     public Type visitBinaryExpression(Expression.Binary expression)

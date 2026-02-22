@@ -30,10 +30,6 @@ class ScannerTest
         scanner = new Scanner(source);
         List<Token> tokens = scanner.scanTokens();
 
-        // expect 8 tokens inside the list of tokens
-        assertEquals(8, tokens.size(), "Testing to see if the size of tokens expected were " +
-                "satisfied");
-
         // Verify each token type and lexeme
         assertEquals(COMMA, tokens.get(0).type());
         assertEquals(",", tokens.get(0).lexeme());

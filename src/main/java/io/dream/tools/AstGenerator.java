@@ -33,7 +33,8 @@ public class AstGenerator
                 "ExpressionStmt: Expression expression",
                 "Write: Expression expression",
                 "VariableDeclaration: Token name, Expression value",
-                "Assignment: Token name, Expression value"
+                "Assignment: Token name, Expression value",
+                "If: Expression condition, Statement thenBranch, Statement elseBranch"
         ));
     }
 
@@ -56,6 +57,7 @@ public class AstGenerator
             writer.println("import java.util.List;"); // import some java class : List
             writer.println("import io.dream.types.Type;");
             writer.println("import io.dream.types.Value;");
+            writer.println("import java.util.Objects;");
             writer.println("import io.dream.scanner.Token;\n"); // import some java class : Token
             writer.println("public abstract class " + name + "\n{");
 
@@ -157,6 +159,47 @@ public class AstGenerator
         {
             writer.printf("\t\tpublic final %s;\n", field);
         }
+
+        // implement equals method
+        writer.printf("\t\t@Override\n");
+        writer.printf("\t\tpublic boolean equals(Object o) {\n");
+        writer.printf("\t\t\tif (this == o) return true;\n");
+        writer.printf("\t\t\tif (o == null || getClass() != o.getClass()) return false;\n");
+        writer.printf("\t\t\t%s.%s that = (%s.%s) o;\n", baseName, subclassName, baseName, subclassName);
+
+        boolean first = true;
+        for (String field : fields)
+        {
+            String name = field.split(" ")[1];
+            if (first)
+            {
+                writer.printf("\t\t\treturn Objects.equals(%s, that.%s)", name, name);
+                first = false;
+            }
+            else
+            {
+                writer.printf(" &&\n\t\t\t\tObjects.equals(%s, that.%s)", name, name);
+            }
+        }
+        writer.println(";");
+        writer.printf("\t\t}\n\n");
+
+        // implement hashCode method
+        writer.printf("\t\t@Override\n");
+        writer.printf("\t\tpublic int hashCode() {\n");
+
+        StringBuilder hashFields = new StringBuilder();
+        first = true;
+        for (String field : fields)
+        {
+            String name = field.split(" ")[1];
+            if (!first) hashFields.append(", ");
+            hashFields.append(name);
+            first = false;
+        }
+
+        writer.printf("\t\t\treturn Objects.hash(%s);\n", hashFields.toString());
+        writer.printf("\t\t}\n\n");
 
         writer.println("    }\n");
     }

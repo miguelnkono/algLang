@@ -1,38 +1,8 @@
 package io.dream.scanner;
 
-import static io.dream.scanner.TokenType.ASSIGN;
-import static io.dream.scanner.TokenType.BANG;
-import static io.dream.scanner.TokenType.CHARACTER_LITERAL;
-import static io.dream.scanner.TokenType.COLON;
-import static io.dream.scanner.TokenType.COMMA;
-import static io.dream.scanner.TokenType.DIFF;
-import static io.dream.scanner.TokenType.DOUBLE_LITERAL;
-import static io.dream.scanner.TokenType.EOF;
-import static io.dream.scanner.TokenType.EQUAL;
-import static io.dream.scanner.TokenType.EQUAL_EQUAL;
-import static io.dream.scanner.TokenType.GREATER;
-import static io.dream.scanner.TokenType.GREATER_OR_EQUAL;
-import static io.dream.scanner.TokenType.IDENTIFIER;
-import static io.dream.scanner.TokenType.INDENT;
-import static io.dream.scanner.TokenType.INTEGER_LITERAL;
-import static io.dream.scanner.TokenType.LEFT_BRACKET;
-import static io.dream.scanner.TokenType.LEFT_PAREN;
-import static io.dream.scanner.TokenType.LESS;
-import static io.dream.scanner.TokenType.LESS_OR_EQUAL;
-import static io.dream.scanner.TokenType.MINUS;
-import static io.dream.scanner.TokenType.MINUS_MINUS;
-import static io.dream.scanner.TokenType.PLUS;
-import static io.dream.scanner.TokenType.PLUS_PLUS;
-import static io.dream.scanner.TokenType.RIGHT_BRACKET;
-import static io.dream.scanner.TokenType.RIGHT_PAREN;
-import static io.dream.scanner.TokenType.SEMICOLON;
-import static io.dream.scanner.TokenType.SLASH;
-import static io.dream.scanner.TokenType.STAR;
-import static io.dream.scanner.TokenType.STAR_STAR;
-import static io.dream.scanner.TokenType.STRING_LITERAL;
+import static io.dream.scanner.TokenType.*;
 
 import java.util.ArrayList;
-// import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 

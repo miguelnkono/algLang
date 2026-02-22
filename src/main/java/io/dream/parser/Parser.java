@@ -1,40 +1,6 @@
 package io.dream.parser;
 
-import static io.dream.scanner.TokenType.ALGORITHM;
-import static io.dream.scanner.TokenType.ASSIGN;
-import static io.dream.scanner.TokenType.BANG;
-import static io.dream.scanner.TokenType.BEGIN;
-import static io.dream.scanner.TokenType.BOOLEAN;
-import static io.dream.scanner.TokenType.CHARACTER;
-import static io.dream.scanner.TokenType.CHARACTER_LITERAL;
-import static io.dream.scanner.TokenType.COLON;
-import static io.dream.scanner.TokenType.DIFF;
-import static io.dream.scanner.TokenType.DOUBLE;
-import static io.dream.scanner.TokenType.DOUBLE_LITERAL;
-import static io.dream.scanner.TokenType.END;
-import static io.dream.scanner.TokenType.EOF;
-import static io.dream.scanner.TokenType.EQUAL_EQUAL;
-import static io.dream.scanner.TokenType.FALSE;
-import static io.dream.scanner.TokenType.GREATER;
-import static io.dream.scanner.TokenType.GREATER_OR_EQUAL;
-import static io.dream.scanner.TokenType.IDENTIFIER;
-import static io.dream.scanner.TokenType.INTEGER;
-import static io.dream.scanner.TokenType.INTEGER_LITERAL;
-import static io.dream.scanner.TokenType.LEFT_PAREN;
-import static io.dream.scanner.TokenType.LESS;
-import static io.dream.scanner.TokenType.LESS_OR_EQUAL;
-import static io.dream.scanner.TokenType.MINUS;
-import static io.dream.scanner.TokenType.NIL;
-import static io.dream.scanner.TokenType.PLUS;
-import static io.dream.scanner.TokenType.RIGHT_PAREN;
-import static io.dream.scanner.TokenType.SEMICOLON;
-import static io.dream.scanner.TokenType.SLASH;
-import static io.dream.scanner.TokenType.STAR;
-import static io.dream.scanner.TokenType.STRING;
-import static io.dream.scanner.TokenType.STRING_LITERAL;
-import static io.dream.scanner.TokenType.TRUE;
-import static io.dream.scanner.TokenType.VARIABLE;
-import static io.dream.scanner.TokenType.WRITE;
+import static io.dream.scanner.TokenType.*;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -204,7 +170,33 @@ public class Parser
             }
         }
 
+        // check if it's an if statement
+        if (match(IF)) {
+            return ifStatement();
+        }
+
         throw error(this.peek(), Messages.expectStatement());
+    }
+
+    private Statement ifStatement() {
+
+        Expression condition = expression();
+        consume(THEN, Messages.expectThen("condition"));
+        consume(COLON, Messages.expectColon("then"));
+        Statement thenBranch = statement();
+        Statement elseBranch = null;
+
+        if (match(ELSE)) {
+            if (check(IF)) {
+                advance();
+                elseBranch = ifStatement();
+            } else {
+                consume(COLON, Messages.expectColon("else"));
+                elseBranch = statement();
+            }
+        }
+
+        return new Statement.If(condition, thenBranch, elseBranch);
     }
 
     private Statement writeStatement()

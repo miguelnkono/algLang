@@ -154,6 +154,17 @@ public class Interpreter implements Expression.Visitor<Object>, Statement.Visito
         return null;
     }
 
+    @Override
+    public Void visitIfStatement(Statement.If statement) {
+        if (isTruth(evaluate(statement.condition))) {
+            execute(statement.thenBranch);
+        } else if (statement.elseBranch != null) {
+            execute(statement.elseBranch);
+        }
+
+        return null;
+    }
+
     private Object evaluate(Expression expression)
     {
         return expression.accept(this);

@@ -47,7 +47,9 @@ final public class Config
         keywords.put("Method", METHOD);
         keywords.put("Class", CLASS);
         keywords.put("if", IF);
+        keywords.put("then", THEN);
         keywords.put("else", ELSE);
+        keywords.put("else if", ELSEIF);
         keywords.put("for", FOR);
         keywords.put("until", WHILE);
         keywords.put("while", DO_WHILE);
@@ -77,8 +79,10 @@ final public class Config
         keywords.put("Classe", CLASS);
         keywords.put("si", IF);
         keywords.put("sinon", ELSE);
+        keywords.put("sinon si", ELSEIF);
+        keywords.put("alors", THEN);
         keywords.put("pour", FOR);
-        keywords.put("tant-que", WHILE);
+        keywords.put("tant_que", WHILE);
         keywords.put("repeter", DO_WHILE);
         keywords.put("vrai", TRUE);
         keywords.put("faux", FALSE);
