@@ -54,6 +54,12 @@ public class Messages
                 : "Expect 'End' to finish the block.";
     }
 
+    public static String expectEndIfBlock() {
+        return Config.getLanguage()
+                ? "Attend 'finsi' pour terminer le bloc si."
+                : "Expect 'endif' to finish the if statement block.";
+    }
+
     public static String expectStatement() {
         return Config.getLanguage()
                 ? "Attend une instruction."
@@ -302,6 +308,12 @@ public class Messages
         return Config.getLanguage()
                 ? "Erreur de type: "
                 : "Type error: ";
+    }
+
+    public static String ifError() {
+        return Config.getLanguage()
+                ? "condition si non terminé: "
+                : "end if not reached: ";
     }
 
     public static String unrecognizedAtomicType(String type) {

@@ -183,18 +183,31 @@ public class Parser
         Expression condition = expression();
         consume(THEN, Messages.expectThen("condition"));
         consume(COLON, Messages.expectColon("then"));
-        Statement thenBranch = statement();
-        Statement elseBranch = null;
+        List<Statement> thenBranch = new ArrayList<>();
+        List<Statement> elseBranch = new ArrayList<>();;
 
-        if (match(ELSE)) {
-            if (check(IF)) {
-                advance();
-                elseBranch = ifStatement();
-            } else {
-                consume(COLON, Messages.expectColon("else"));
-                elseBranch = statement();
+        while (!check(ENDIF) && !isAtEnd()) {
+            // parse the all the statements;
+            thenBranch.add(statement());
+
+            if (match(ELSE)) {
+                if (check(IF)) {
+                    advance();
+                    elseBranch.add(ifStatement());
+                } else {
+                    consume(COLON, Messages.expectColon("else"));
+                    elseBranch.add(statement());
+                }
             }
         }
+
+        // if we hit the end of file before getting to the end of any if statements, then it's an error;
+        if (isAtEnd()) {
+            throw error(this.peek(), Messages.ifError());
+        }
+
+        // the end of the conditional statement
+        consume(ENDIF,  Messages.expectEndIfBlock());
 
         return new Statement.If(condition, thenBranch, elseBranch);
     }
@@ -424,6 +437,7 @@ public class Parser
                 case ALGORITHM:
                 case BEGIN:
                 case END:
+                case IF:
                     return;
             }
 

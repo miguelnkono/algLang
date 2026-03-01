@@ -34,7 +34,7 @@ public class AstGenerator
                 "Write: Expression expression",
                 "VariableDeclaration: Token name, Expression value",
                 "Assignment: Token name, Expression value",
-                "If: Expression condition, Statement thenBranch, Statement elseBranch"
+                "If: Expression condition, List<Statement> thenBranch, List<Statement> elseBranch"
         ));
     }
 

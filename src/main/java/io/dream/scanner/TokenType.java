@@ -25,7 +25,7 @@ public enum TokenType
     // keywords
     ALGORITHM, VARIABLE, BEGIN, END,
     METHOD, CLASS,
-    IF, ELSE, THEN, ELSEIF,
+    IF, ELSE, THEN, ELSEIF, ENDIF,
     FOR, WHILE, DO_WHILE,
     TRUE, FALSE,
     NIL,

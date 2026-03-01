@@ -157,9 +157,13 @@ public class Interpreter implements Expression.Visitor<Object>, Statement.Visito
     @Override
     public Void visitIfStatement(Statement.If statement) {
         if (isTruth(evaluate(statement.condition))) {
-            execute(statement.thenBranch);
+            for (Statement stmt : statement.thenBranch) {
+                execute(stmt);
+            }
         } else if (statement.elseBranch != null) {
-            execute(statement.elseBranch);
+            for (Statement stmt : statement.elseBranch) {
+                execute(stmt);
+            }
         }
 
         return null;

@@ -141,6 +141,20 @@ public class Checker implements Expression.Visitor<Type>, Statement.Visitor<Void
             );
         }
 
+        if (!statement.thenBranch.isEmpty()) {
+            for (Statement stmt : statement.thenBranch)
+            {
+                check(stmt);
+            }
+        }
+
+        if (!statement.elseBranch.isEmpty()) {
+            for (Statement stmt : statement.elseBranch)
+            {
+                check(stmt);
+            }
+        }
+
         return null;
     }
 

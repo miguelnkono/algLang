@@ -50,6 +50,7 @@ final public class Config
         keywords.put("then", THEN);
         keywords.put("else", ELSE);
         keywords.put("else if", ELSEIF);
+        keywords.put("endif", ENDIF);
         keywords.put("for", FOR);
         keywords.put("until", WHILE);
         keywords.put("while", DO_WHILE);
@@ -80,6 +81,7 @@ final public class Config
         keywords.put("si", IF);
         keywords.put("sinon", ELSE);
         keywords.put("sinon si", ELSEIF);
+        keywords.put("finsi", ENDIF);
         keywords.put("alors", THEN);
         keywords.put("pour", FOR);
         keywords.put("tant_que", WHILE);

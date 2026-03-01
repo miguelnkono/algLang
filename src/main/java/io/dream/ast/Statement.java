@@ -136,7 +136,7 @@ public abstract class Statement
 
     public static class If extends Statement 
     {
-        public If (Expression condition, Statement thenBranch, Statement elseBranch)
+        public If (Expression condition, List<Statement> thenBranch, List<Statement> elseBranch)
         {
             this.condition = condition;
             this.thenBranch = thenBranch;
@@ -149,8 +149,8 @@ public abstract class Statement
 		}
 
 		public final Expression condition;
-		public final Statement thenBranch;
-		public final Statement elseBranch;
+		public final List<Statement> thenBranch;
+		public final List<Statement> elseBranch;
 		@Override
 		public boolean equals(Object o) {
 			if (this == o) return true;

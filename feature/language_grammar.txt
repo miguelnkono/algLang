@@ -16,7 +16,7 @@ expression_stmt   -> expression ";"
 write_stmt        -> "Ecrire" "(" expression ("," expression)* ")" ";"
 read_stmt         -> "Lire" "(" IDENTIFIER ")" ";"
 assignment_stmt   -> IDENTIFIER "=" expression ";"
-if_stmt           -> "Si" expression "alors" statement ("sinon si" statement)? ("sinon" statement)?
+if_stmt           -> "si" expression "alors" statement* ("sinon si" statement*)? ("sinon" statement*)?
 while_stmt        -> "TantQue" "(" expression ")" "faire" statement
 
 // Existing expression grammar (with some additions)

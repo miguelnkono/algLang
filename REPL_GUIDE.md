@@ -273,8 +273,9 @@ The REPL uses colors for better readability:
 If colors don't work in your terminal, use SimpleREPL:
 
 Update `Main.java`:
+
 ```java
-import io.dream.repl.SimpleREPL;
+
 
 private static void runPrompt() throws IOException {
     SimpleREPL repl = new SimpleREPL();
