@@ -858,7 +858,7 @@ public class Interpreter implements Expression.Visitor<Object>, Statement.Visito
     {
         checkNumberOperands(null, left, right);
 
-        double leftVal, rightVal;
+        int leftVal, rightVal;
 
         if (type.equals(TypeFactory.INTEGER))
         {
@@ -867,23 +867,18 @@ public class Interpreter implements Expression.Visitor<Object>, Statement.Visito
         }
         else
         {
-            leftVal = (double) left;
-            rightVal = (double) right;
+            leftVal = (int) left;
+            rightVal = (int) right;
         }
 
-        switch (operator)
-        {
-            case GREATER:
-                return leftVal > rightVal;
-            case GREATER_OR_EQUAL:
-                return leftVal >= rightVal;
-            case LESS:
-                return leftVal < rightVal;
-            case LESS_OR_EQUAL:
-                return leftVal <= rightVal;
-        }
+        return switch (operator) {
+            case GREATER -> leftVal > rightVal;
+            case GREATER_OR_EQUAL -> leftVal >= rightVal;
+            case LESS -> leftVal < rightVal;
+            case LESS_OR_EQUAL -> leftVal <= rightVal;
+            default -> null;
+        };
 
-        return null;
     }
 
     /**

@@ -2,7 +2,9 @@ Algorithme: structures_base;
 
 Type:
     Structure Point
-        x, y : entier;
+        // x, y : entier;
+        x : entier;
+        y : entier;
     FinStruct
 
 Variables:

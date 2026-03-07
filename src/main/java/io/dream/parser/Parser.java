@@ -62,10 +62,6 @@ public class Parser
         }
     }
 
-    // ========================================================================
-    // PROGRAM STRUCTURE
-    // ========================================================================
-
     /**
      * program -> algorithm_header type_section? constant_section?
      *            function_section* method_section* var_section? block
@@ -135,10 +131,6 @@ public class Parser
         consume(SEMICOLON, Messages.expectSemicolon("algorithm name"));
     }
 
-    // ========================================================================
-    // TYPE SECTION (STRUCTURES)
-    // ========================================================================
-
     /**
      * Structure Personne
      *     nom : chaine;
@@ -180,10 +172,6 @@ public class Parser
         return new Statement.StructDeclaration(name, fields);
     }
 
-    // ========================================================================
-    // CONSTANT SECTION
-    // ========================================================================
-
     /**
      * PI = 3.14;
      */
@@ -198,10 +186,6 @@ public class Parser
         // Type will be inferred from the expression
         return new Statement.ConstantDeclaration(name, value, null);
     }
-
-    // ========================================================================
-    // FUNCTION SECTION
-    // ========================================================================
 
     /**
      * Fonction: carre(x: entier): entier;
@@ -280,10 +264,6 @@ public class Parser
         return new Statement.FunctionDeclaration(name, parameters, returnType, body);
     }
 
-    // ========================================================================
-    // METHOD SECTION
-    // ========================================================================
-
     /**
      * Methode: afficher(x: entier):
      * Debut:
@@ -351,10 +331,6 @@ public class Parser
         return new Statement.MethodDeclaration(name, parameters, body);
     }
 
-    // ========================================================================
-    // VARIABLE SECTION
-    // ========================================================================
-
     /**
      * Variables:
      *     x, y : entier;
@@ -398,10 +374,6 @@ public class Parser
             currentScope.put(name.lexeme(), varType);
         }
     }
-
-    // ========================================================================
-    // TYPE PARSING
-    // ========================================================================
 
     /**
      * Parse a type specification
@@ -484,13 +456,6 @@ public class Parser
 
         return new ArrayType(elementType, lowerBound, upperBound);
     }
-
-    // ========================================================================
-    // Continued in next part...
-    // ========================================================================
-    // ========================================================================
-    // BLOCK AND STATEMENTS
-    // ========================================================================
 
     /**
      * block -> ("Debut" | "Begin") ":" statement* ("Fin" | "End")
@@ -805,7 +770,7 @@ public class Parser
 
     /**
      * for_stmt -> ("pour" | "for") IDENTIFIER "<-" expression
-     *             ("jusqu_a" | "to") expression
+     *             ("jusqu_a" | "unti") expression
      *             (("pas" | "step") expression)?
      *             ("faire" | "do") ":"
      *             statement*
@@ -816,7 +781,7 @@ public class Parser
         Token variable = consume(IDENTIFIER, Messages.expectVariableName());
         consume(ASSIGN, Messages.expectAssignOperator());
         Expression start = expression();
-        consume(TO, Messages.expectTo());
+        consume(UNTIL, Messages.expectTo());
         Expression end = expression();
 
         Expression step = null;
@@ -843,13 +808,6 @@ public class Parser
 
         return new Statement.For(variable, start, end, step, body);
     }
-
-    // ========================================================================
-    // Continued in next part...
-    // ========================================================================
-    // ========================================================================
-    // EXPRESSIONS
-    // ========================================================================
 
     /**
      * expression -> logical_or
@@ -1234,4 +1192,3 @@ public class Parser
         return constantTable;
     }
 }
-

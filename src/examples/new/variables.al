@@ -7,7 +7,7 @@ Variables:
     booleen_var : booleen;
 Debut:
     entier_var <- 42;
-    reel_var <- 3.14159;
+    reel_var <- 3,14159;
     chaine_var <- "AlgoLang";
     caractere_var <- 'A';
     booleen_var <- vrai;
