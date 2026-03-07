@@ -6,22 +6,40 @@ import io.dream.types.Value;
 import java.util.Objects;
 import io.dream.scanner.Token;
 
+/**
+ * Statement AST nodes for AlgoLang
+ * Includes all statement types: declarations, assignments, control flow,
+ * functions, methods, structures, etc.
+ */
 public abstract class Statement
 {
 	public interface Visitor<R> {
-		 R visitExpressionStmtStatement (ExpressionStmt statement);
-		 R visitWriteStatement (Write statement);
-		 R visitVariableDeclarationStatement (VariableDeclaration statement);
-		 R visitAssignmentStatement (Assignment statement);
-		 R visitIfStatement (If statement);
+		R visitExpressionStmtStatement(ExpressionStmt statement);
+		R visitWriteStatement(Write statement);
+		R visitReadStatement(Read statement);
+		R visitVariableDeclarationStatement(VariableDeclaration statement);
+		R visitConstantDeclarationStatement(ConstantDeclaration statement);
+		R visitAssignmentStatement(Assignment statement);
+		R visitIfStatement(If statement);
+		R visitWhileStatement(While statement);
+		R visitDoWhileStatement(DoWhile statement);
+		R visitForStatement(For statement);
+		R visitFunctionDeclarationStatement(FunctionDeclaration statement);
+		R visitMethodDeclarationStatement(MethodDeclaration statement);
+		R visitReturnStatement(Return statement);
+		R visitStructDeclarationStatement(StructDeclaration statement);
+		R visitMethodCallStatement(MethodCall statement);
 	}
 
-    public static class ExpressionStmt extends Statement 
-    {
-        public ExpressionStmt (Expression expression)
-        {
-            this.expression = expression;
-        }
+	// ========================================================================
+	// EXPRESSION STATEMENT (e.g., 5 + 3;)
+	// ========================================================================
+	public static class ExpressionStmt extends Statement
+	{
+		public ExpressionStmt(Expression expression)
+		{
+			this.expression = expression;
+		}
 
 		@Override
 		public <R> R accept(Visitor<R> visitor) {
@@ -29,6 +47,7 @@ public abstract class Statement
 		}
 
 		public final Expression expression;
+
 		@Override
 		public boolean equals(Object o) {
 			if (this == o) return true;
@@ -41,15 +60,17 @@ public abstract class Statement
 		public int hashCode() {
 			return Objects.hash(expression);
 		}
+	}
 
-    }
-
-    public static class Write extends Statement 
-    {
-        public Write (Expression expression)
-        {
-            this.expression = expression;
-        }
+	// ========================================================================
+	// WRITE STATEMENT (e.g., ecrire("Hello");)
+	// ========================================================================
+	public static class Write extends Statement
+	{
+		public Write(Expression expression)
+		{
+			this.expression = expression;
+		}
 
 		@Override
 		public <R> R accept(Visitor<R> visitor) {
@@ -57,6 +78,7 @@ public abstract class Statement
 		}
 
 		public final Expression expression;
+
 		@Override
 		public boolean equals(Object o) {
 			if (this == o) return true;
@@ -69,16 +91,49 @@ public abstract class Statement
 		public int hashCode() {
 			return Objects.hash(expression);
 		}
+	}
 
-    }
+	// ========================================================================
+	// READ STATEMENT (e.g., lire(x);)
+	// ========================================================================
+	public static class Read extends Statement
+	{
+		public Read(Token variable)
+		{
+			this.variable = variable;
+		}
 
-    public static class VariableDeclaration extends Statement 
-    {
-        public VariableDeclaration (Token name, Expression value)
-        {
-            this.name = name;
-            this.value = value;
-        }
+		@Override
+		public <R> R accept(Visitor<R> visitor) {
+			return visitor.visitReadStatement(this);
+		}
+
+		public final Token variable;
+
+		@Override
+		public boolean equals(Object o) {
+			if (this == o) return true;
+			if (o == null || getClass() != o.getClass()) return false;
+			Statement.Read that = (Statement.Read) o;
+			return Objects.equals(variable, that.variable);
+		}
+
+		@Override
+		public int hashCode() {
+			return Objects.hash(variable);
+		}
+	}
+
+	// ========================================================================
+	// VARIABLE DECLARATION (e.g., x : entier;)
+	// ========================================================================
+	public static class VariableDeclaration extends Statement
+	{
+		public VariableDeclaration(Token name, Expression value)
+		{
+			this.name = name;
+			this.value = value;
+		}
 
 		@Override
 		public <R> R accept(Visitor<R> visitor) {
@@ -87,29 +142,69 @@ public abstract class Statement
 
 		public final Token name;
 		public final Expression value;
+
 		@Override
 		public boolean equals(Object o) {
 			if (this == o) return true;
 			if (o == null || getClass() != o.getClass()) return false;
 			Statement.VariableDeclaration that = (Statement.VariableDeclaration) o;
 			return Objects.equals(name, that.name) &&
-				Objects.equals(value, that.value);
+					Objects.equals(value, that.value);
 		}
 
 		@Override
 		public int hashCode() {
 			return Objects.hash(name, value);
 		}
+	}
 
-    }
+	// ========================================================================
+	// CONSTANT DECLARATION (e.g., PI = 3.14;)
+	// ========================================================================
+	public static class ConstantDeclaration extends Statement
+	{
+		public ConstantDeclaration(Token name, Expression value, Type type)
+		{
+			this.name = name;
+			this.value = value;
+			this.type = type;
+		}
 
-    public static class Assignment extends Statement 
-    {
-        public Assignment (Token name, Expression value)
-        {
-            this.name = name;
-            this.value = value;
-        }
+		@Override
+		public <R> R accept(Visitor<R> visitor) {
+			return visitor.visitConstantDeclarationStatement(this);
+		}
+
+		public final Token name;
+		public final Expression value;
+		public final Type type;
+
+		@Override
+		public boolean equals(Object o) {
+			if (this == o) return true;
+			if (o == null || getClass() != o.getClass()) return false;
+			Statement.ConstantDeclaration that = (Statement.ConstantDeclaration) o;
+			return Objects.equals(name, that.name) &&
+					Objects.equals(value, that.value) &&
+					Objects.equals(type, that.type);
+		}
+
+		@Override
+		public int hashCode() {
+			return Objects.hash(name, value, type);
+		}
+	}
+
+	// ========================================================================
+	// ASSIGNMENT STATEMENT (e.g., x <- 5;)
+	// ========================================================================
+	public static class Assignment extends Statement
+	{
+		public Assignment(Token name, Expression value)
+		{
+			this.name = name;
+			this.value = value;
+		}
 
 		@Override
 		public <R> R accept(Visitor<R> visitor) {
@@ -118,30 +213,33 @@ public abstract class Statement
 
 		public final Token name;
 		public final Expression value;
+
 		@Override
 		public boolean equals(Object o) {
 			if (this == o) return true;
 			if (o == null || getClass() != o.getClass()) return false;
 			Statement.Assignment that = (Statement.Assignment) o;
 			return Objects.equals(name, that.name) &&
-				Objects.equals(value, that.value);
+					Objects.equals(value, that.value);
 		}
 
 		@Override
 		public int hashCode() {
 			return Objects.hash(name, value);
 		}
+	}
 
-    }
-
-    public static class If extends Statement 
-    {
-        public If (Expression condition, List<Statement> thenBranch, List<Statement> elseBranch)
-        {
-            this.condition = condition;
-            this.thenBranch = thenBranch;
-            this.elseBranch = elseBranch;
-        }
+	// ========================================================================
+	// IF STATEMENT (e.g., si condition alors ... finsi)
+	// ========================================================================
+	public static class If extends Statement
+	{
+		public If(Expression condition, List<Statement> thenBranch, List<Statement> elseBranch)
+		{
+			this.condition = condition;
+			this.thenBranch = thenBranch;
+			this.elseBranch = elseBranch;
+		}
 
 		@Override
 		public <R> R accept(Visitor<R> visitor) {
@@ -151,23 +249,382 @@ public abstract class Statement
 		public final Expression condition;
 		public final List<Statement> thenBranch;
 		public final List<Statement> elseBranch;
+
 		@Override
 		public boolean equals(Object o) {
 			if (this == o) return true;
 			if (o == null || getClass() != o.getClass()) return false;
 			Statement.If that = (Statement.If) o;
 			return Objects.equals(condition, that.condition) &&
-				Objects.equals(thenBranch, that.thenBranch) &&
-				Objects.equals(elseBranch, that.elseBranch);
+					Objects.equals(thenBranch, that.thenBranch) &&
+					Objects.equals(elseBranch, that.elseBranch);
 		}
 
 		@Override
 		public int hashCode() {
 			return Objects.hash(condition, thenBranch, elseBranch);
 		}
+	}
 
-    }
+	// ========================================================================
+	// WHILE STATEMENT (e.g., tant_que (condition) faire ... fintantque)
+	// ========================================================================
+	public static class While extends Statement
+	{
+		public While(Expression condition, List<Statement> body)
+		{
+			this.condition = condition;
+			this.body = body;
+		}
 
+		@Override
+		public <R> R accept(Visitor<R> visitor) {
+			return visitor.visitWhileStatement(this);
+		}
+
+		public final Expression condition;
+		public final List<Statement> body;
+
+		@Override
+		public boolean equals(Object o) {
+			if (this == o) return true;
+			if (o == null || getClass() != o.getClass()) return false;
+			Statement.While that = (Statement.While) o;
+			return Objects.equals(condition, that.condition) &&
+					Objects.equals(body, that.body);
+		}
+
+		@Override
+		public int hashCode() {
+			return Objects.hash(condition, body);
+		}
+	}
+
+	// ========================================================================
+	// DO-WHILE STATEMENT (e.g., repeter ... jusqu_a (condition);)
+	// ========================================================================
+	public static class DoWhile extends Statement
+	{
+		public DoWhile(List<Statement> body, Expression condition)
+		{
+			this.body = body;
+			this.condition = condition;
+		}
+
+		@Override
+		public <R> R accept(Visitor<R> visitor) {
+			return visitor.visitDoWhileStatement(this);
+		}
+
+		public final List<Statement> body;
+		public final Expression condition;
+
+		@Override
+		public boolean equals(Object o) {
+			if (this == o) return true;
+			if (o == null || getClass() != o.getClass()) return false;
+			Statement.DoWhile that = (Statement.DoWhile) o;
+			return Objects.equals(body, that.body) &&
+					Objects.equals(condition, that.condition);
+		}
+
+		@Override
+		public int hashCode() {
+			return Objects.hash(body, condition);
+		}
+	}
+
+	// ========================================================================
+	// FOR STATEMENT (e.g., pour i <- 1 jusqu_a 10 faire ... finpour)
+	// ========================================================================
+	public static class For extends Statement
+	{
+		public For(Token variable, Expression start, Expression end, Expression step, List<Statement> body)
+		{
+			this.variable = variable;
+			this.start = start;
+			this.end = end;
+			this.step = step;
+			this.body = body;
+		}
+
+		@Override
+		public <R> R accept(Visitor<R> visitor) {
+			return visitor.visitForStatement(this);
+		}
+
+		public final Token variable;
+		public final Expression start;
+		public final Expression end;
+		public final Expression step;  // Can be null (defaults to 1)
+		public final List<Statement> body;
+
+		@Override
+		public boolean equals(Object o) {
+			if (this == o) return true;
+			if (o == null || getClass() != o.getClass()) return false;
+			Statement.For that = (Statement.For) o;
+			return Objects.equals(variable, that.variable) &&
+					Objects.equals(start, that.start) &&
+					Objects.equals(end, that.end) &&
+					Objects.equals(step, that.step) &&
+					Objects.equals(body, that.body);
+		}
+
+		@Override
+		public int hashCode() {
+			return Objects.hash(variable, start, end, step, body);
+		}
+	}
+
+	// ========================================================================
+	// FUNCTION DECLARATION
+	// (e.g., Fonction: carre(x: entier): entier; ... FinFonction;)
+	// ========================================================================
+	public static class FunctionDeclaration extends Statement
+	{
+		public FunctionDeclaration(Token name, List<Parameter> parameters, Type returnType,
+								   List<Statement> body)
+		{
+			this.name = name;
+			this.parameters = parameters;
+			this.returnType = returnType;
+			this.body = body;
+		}
+
+		@Override
+		public <R> R accept(Visitor<R> visitor) {
+			return visitor.visitFunctionDeclarationStatement(this);
+		}
+
+		public final Token name;
+		public final List<Parameter> parameters;
+		public final Type returnType;
+		public final List<Statement> body;
+
+		@Override
+		public boolean equals(Object o) {
+			if (this == o) return true;
+			if (o == null || getClass() != o.getClass()) return false;
+			Statement.FunctionDeclaration that = (Statement.FunctionDeclaration) o;
+			return Objects.equals(name, that.name) &&
+					Objects.equals(parameters, that.parameters) &&
+					Objects.equals(returnType, that.returnType) &&
+					Objects.equals(body, that.body);
+		}
+
+		@Override
+		public int hashCode() {
+			return Objects.hash(name, parameters, returnType, body);
+		}
+	}
+
+	// ========================================================================
+	// METHOD DECLARATION
+	// (e.g., Methode: afficher(x: entier): ... FinMethode;)
+	// ========================================================================
+	public static class MethodDeclaration extends Statement
+	{
+		public MethodDeclaration(Token name, List<Parameter> parameters, List<Statement> body)
+		{
+			this.name = name;
+			this.parameters = parameters;
+			this.body = body;
+		}
+
+		@Override
+		public <R> R accept(Visitor<R> visitor) {
+			return visitor.visitMethodDeclarationStatement(this);
+		}
+
+		public final Token name;
+		public final List<Parameter> parameters;
+		public final List<Statement> body;
+
+		@Override
+		public boolean equals(Object o) {
+			if (this == o) return true;
+			if (o == null || getClass() != o.getClass()) return false;
+			Statement.MethodDeclaration that = (Statement.MethodDeclaration) o;
+			return Objects.equals(name, that.name) &&
+					Objects.equals(parameters, that.parameters) &&
+					Objects.equals(body, that.body);
+		}
+
+		@Override
+		public int hashCode() {
+			return Objects.hash(name, parameters, body);
+		}
+	}
+
+	// ========================================================================
+	// RETURN STATEMENT (e.g., retourne x * x;)
+	// ========================================================================
+	public static class Return extends Statement
+	{
+		public Return(Token keyword, Expression value)
+		{
+			this.keyword = keyword;
+			this.value = value;
+		}
+
+		@Override
+		public <R> R accept(Visitor<R> visitor) {
+			return visitor.visitReturnStatement(this);
+		}
+
+		public final Token keyword;
+		public final Expression value;
+
+		@Override
+		public boolean equals(Object o) {
+			if (this == o) return true;
+			if (o == null || getClass() != o.getClass()) return false;
+			Statement.Return that = (Statement.Return) o;
+			return Objects.equals(keyword, that.keyword) &&
+					Objects.equals(value, that.value);
+		}
+
+		@Override
+		public int hashCode() {
+			return Objects.hash(keyword, value);
+		}
+	}
+
+	// ========================================================================
+	// STRUCTURE DECLARATION
+	// (e.g., Type: Structure Personne ... FinStruct)
+	// ========================================================================
+	public static class StructDeclaration extends Statement
+	{
+		public StructDeclaration(Token name, List<Field> fields)
+		{
+			this.name = name;
+			this.fields = fields;
+		}
+
+		@Override
+		public <R> R accept(Visitor<R> visitor) {
+			return visitor.visitStructDeclarationStatement(this);
+		}
+
+		public final Token name;
+		public final List<Field> fields;
+
+		@Override
+		public boolean equals(Object o) {
+			if (this == o) return true;
+			if (o == null || getClass() != o.getClass()) return false;
+			Statement.StructDeclaration that = (Statement.StructDeclaration) o;
+			return Objects.equals(name, that.name) &&
+					Objects.equals(fields, that.fields);
+		}
+
+		@Override
+		public int hashCode() {
+			return Objects.hash(name, fields);
+		}
+	}
+
+	// ========================================================================
+	// METHOD CALL STATEMENT (e.g., afficher(x);)
+	// ========================================================================
+	public static class MethodCall extends Statement
+	{
+		public MethodCall(Token name, List<Expression> arguments)
+		{
+			this.name = name;
+			this.arguments = arguments;
+		}
+
+		@Override
+		public <R> R accept(Visitor<R> visitor) {
+			return visitor.visitMethodCallStatement(this);
+		}
+
+		public final Token name;
+		public final List<Expression> arguments;
+
+		@Override
+		public boolean equals(Object o) {
+			if (this == o) return true;
+			if (o == null || getClass() != o.getClass()) return false;
+			Statement.MethodCall that = (Statement.MethodCall) o;
+			return Objects.equals(name, that.name) &&
+					Objects.equals(arguments, that.arguments);
+		}
+
+		@Override
+		public int hashCode() {
+			return Objects.hash(name, arguments);
+		}
+	}
+
+	// ========================================================================
+	// HELPER CLASSES
+	// ========================================================================
+
+	/**
+	 * Parameter for function/method declarations
+	 */
+	public static class Parameter
+	{
+		public Parameter(Token name, Type type)
+		{
+			this.name = name;
+			this.type = type;
+		}
+
+		public final Token name;
+		public final Type type;
+
+		@Override
+		public boolean equals(Object o) {
+			if (this == o) return true;
+			if (o == null || getClass() != o.getClass()) return false;
+			Parameter that = (Parameter) o;
+			return Objects.equals(name, that.name) &&
+					Objects.equals(type, that.type);
+		}
+
+		@Override
+		public int hashCode() {
+			return Objects.hash(name, type);
+		}
+	}
+
+	/**
+	 * Field for structure declarations
+	 */
+	public static class Field
+	{
+		public Field(Token name, Type type)
+		{
+			this.name = name;
+			this.type = type;
+		}
+
+		public final Token name;
+		public final Type type;
+
+		@Override
+		public boolean equals(Object o) {
+			if (this == o) return true;
+			if (o == null || getClass() != o.getClass()) return false;
+			Field that = (Field) o;
+			return Objects.equals(name, that.name) &&
+					Objects.equals(type, that.type);
+		}
+
+		@Override
+		public int hashCode() {
+			return Objects.hash(name, type);
+		}
+	}
+
+	// ========================================================================
+	// TYPE INFORMATION
+	// ========================================================================
 	private Type type;
 
 	public Type getType()

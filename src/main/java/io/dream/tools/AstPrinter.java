@@ -44,6 +44,51 @@ public class AstPrinter implements Expression.Visitor<String>
         return "";
     }
 
+    /**
+     * @param expression
+     * @return
+     */
+    @Override
+    public String visitLogicalExpression(Expression.Logical expression) {
+        return "";
+    }
+
+    /**
+     * @param expression
+     * @return
+     */
+    @Override
+    public String visitCallExpression(Expression.Call expression) {
+        return "";
+    }
+
+    /**
+     * @param expression
+     * @return
+     */
+    @Override
+    public String visitArrayAccessExpression(Expression.ArrayAccess expression) {
+        return "";
+    }
+
+    /**
+     * @param expression
+     * @return
+     */
+    @Override
+    public String visitFieldAccessExpression(Expression.FieldAccess expression) {
+        return "";
+    }
+
+    /**
+     * @param expression
+     * @return
+     */
+    @Override
+    public String visitArrayLiteralExpression(Expression.ArrayLiteral expression) {
+        return "";
+    }
+
     private String parenthesize(String name, Expression... expressions)
     {
         StringBuilder stringBuilder = new StringBuilder();

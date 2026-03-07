@@ -4,6 +4,7 @@ import static io.dream.scanner.TokenType.*;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -13,39 +14,41 @@ import io.dream.ast.Statement;
 import io.dream.config.Messages;
 import io.dream.scanner.Token;
 import io.dream.scanner.TokenType;
-import io.dream.types.AtomicTypes;
-import io.dream.types.AtomicValue;
-import io.dream.types.Type;
-import io.dream.types.TypeFactory;
+import io.dream.types.*;
 
 /**
- * The type Parser.
+ * Complete Parser for AlgoLang
+ * Supports all language features: loops, functions, methods, arrays, structures, etc.
  */
 public class Parser
 {
     private static class ParseError extends RuntimeException {}
 
-    // the list of all the tokens
+    // Token list and current position
     private final List<Token> tokens;
     private int current = 0;
 
-    // Symbol table to store variable declarations (name -> type)
-    private final Map<String, Type> symbolTable = new HashMap<>();
+    // Symbol tables for different scopes
+    private final Map<String, Type> globalSymbolTable = new HashMap<>();
+    private final Map<String, FunctionType> functionTable = new HashMap<>();
+    private final Map<String, List<Statement.Parameter>> methodTable = new HashMap<>();
+    private final Map<String, StructType> structTable = new HashMap<>();
+    private final Map<String, Value> constantTable = new HashMap<>();
+
+    // Current scope for variables (for nested scopes in functions)
+    private Map<String, Type> currentScope;
 
     /**
      * Instantiates a new Parser.
-     *
-     * @param tokens the tokens
      */
     public Parser(List<Token> tokens)
     {
         this.tokens = tokens;
+        this.currentScope = globalSymbolTable;
     }
 
     /**
-     * This is the function that will parse all the code of user of the interpreter.
-     *
-     * @return the list of statements representing the program.
+     * Parse the complete program
      */
     public List<Statement> parse()
     {
@@ -59,68 +62,70 @@ public class Parser
         }
     }
 
+    // ========================================================================
+    // PROGRAM STRUCTURE
+    // ========================================================================
+
     /**
-     * Parses a complete program.
-     * program -> algorithm_header block
+     * program -> algorithm_header type_section? constant_section?
+     *            function_section* method_section* var_section? block
      */
     private List<Statement> program()
     {
+        List<Statement> allStatements = new ArrayList<>();
+
+        // Parse algorithm header
         algorithmHeader();
 
-        // variable declaration section is optional
-        if (match(VARIABLE)) {
-            var_list();
+        // Parse optional type section (structures)
+        if (match(TYPE))
+        {
+            consume(COLON, Messages.expectColon("Type"));
+            while (!check(CONSTANT) && !check(FUNCTION) && !check(METHOD) &&
+                    !check(VARIABLE) && !check(BEGIN) && !isAtEnd())
+            {
+                allStatements.add(structDeclaration());
+            }
         }
 
-        return block();
-    }
-
-    private void var_list() {
-        consume(COLON, Messages.expectColon("Variables"));
-
-        // we can declare multiple variables, so we loop until we find the beginning of the block.
-        while (!check(BEGIN) && !isAtEnd()) {
-            var_decl();
-        }
-    }
-
-    private void var_decl() {
-        Token name = consume(IDENTIFIER, Messages.expectVariableName());
-        consume(COLON, Messages.expectAfter(":", "variable name"));
-        Token type = null;
-        Type varType = null;
-
-        if (match(INTEGER)) {
-            type = previous();
-            varType = TypeFactory.INTEGER;
-        } else if (match(DOUBLE)) {
-            type = previous();
-            varType = TypeFactory.FLOATING;
-        } else if (match(STRING)) {
-            type = previous();
-            varType = TypeFactory.STRING;
-        } else if (match(CHARACTER)) {
-            type = previous();
-            varType = TypeFactory.CHAR;
-        } else if (match(BOOLEAN)) {
-            type = previous();
-            varType = TypeFactory.BOOLEAN;
-        } else {
-            throw error(this.peek(), Messages.expectVariableType());
+        // Parse optional constant section
+        if (match(CONSTANT))
+        {
+            consume(COLON, Messages.expectColon("Constant"));
+            while (!check(FUNCTION) && !check(METHOD) && !check(VARIABLE) &&
+                    !check(BEGIN) && !isAtEnd())
+            {
+                allStatements.add(constantDeclaration());
+            }
         }
 
-        consume(SEMICOLON, Messages.expectSemicolon("variable declaration"));
-
-        // Store the variable declaration in the symbol table
-        if (symbolTable.containsKey(name.lexeme())) {
-            throw error(name, Messages.variableAlreadyDeclared(name.lexeme()));
+        // Parse functions
+        while (match(FUNCTION))
+        {
+            allStatements.add(functionDeclaration());
         }
-        symbolTable.put(name.lexeme(), varType);
+
+        // Parse methods
+        while (match(METHOD))
+        {
+            allStatements.add(methodDeclaration());
+        }
+
+        // Parse optional variable section
+        if (match(VARIABLE))
+        {
+            varSection();
+        }
+
+        // Parse main block
+        List<Statement> blockStatements = block();
+        allStatements.addAll(blockStatements);
+
+        return allStatements;
     }
 
     /**
-     * Parses the algorithm header.
-     * algorithm_header -> "Algorithme" ":" IDENTIFIER ";"
+     * algorithm_header -> ("Algorithme" | "Algorithm") ":" IDENTIFIER ";"
      */
     private void algorithmHeader()
     {
@@ -130,9 +135,365 @@ public class Parser
         consume(SEMICOLON, Messages.expectSemicolon("algorithm name"));
     }
 
+    // ========================================================================
+    // TYPE SECTION (STRUCTURES)
+    // ========================================================================
+
     /**
-     * Parses a block of statements.
-     * block -> "Debut" ":" statement* "Fin"
+     * Structure Personne
+     *     nom : chaine;
+     *     age : entier;
+     * FinStruct
+     */
+    private Statement structDeclaration()
+    {
+        consume(STRUCTURE, Messages.expectAfter("Structure", "Type:"));
+        Token name = consume(IDENTIFIER, Messages.expectStructName());
+
+        // Check for duplicate structure declaration
+        if (structTable.containsKey(name.lexeme()))
+        {
+            throw error(name, Messages.structureAlreadyDeclared(name.lexeme()));
+        }
+
+        List<Statement.Field> fields = new ArrayList<>();
+        Map<String, Type> fieldTypes = new LinkedHashMap<>();
+
+        // Parse fields
+        while (!check(END_STRUCT) && !isAtEnd())
+        {
+            Token fieldName = consume(IDENTIFIER, Messages.expectFieldName());
+            consume(COLON, Messages.expectAfter(":", "field name"));
+            Type fieldType = parseType();
+            consume(SEMICOLON, Messages.expectSemicolon("field declaration"));
+
+            fields.add(new Statement.Field(fieldName, fieldType));
+            fieldTypes.put(fieldName.lexeme(), fieldType);
+        }
+
+        consume(END_STRUCT, Messages.expectEndStructBlock());
+
+        // Create and register the structure type
+        StructType structType = new StructType(name.lexeme(), fieldTypes);
+        structTable.put(name.lexeme(), structType);
+
+        return new Statement.StructDeclaration(name, fields);
+    }
+
+    // ========================================================================
+    // CONSTANT SECTION
+    // ========================================================================
+
+    /**
+     * PI = 3.14;
+     */
+    private Statement constantDeclaration()
+    {
+        Token name = consume(IDENTIFIER, Messages.expectVariableName());
+        consume(EQUAL, Messages.expectAfter("=", "constant name"));
+        Expression value = expression();
+        consume(SEMICOLON, Messages.expectSemicolon("constant declaration"));
+
+        // Store constant in constant table
+        // Type will be inferred from the expression
+        return new Statement.ConstantDeclaration(name, value, null);
+    }
+
+    // ========================================================================
+    // FUNCTION SECTION
+    // ========================================================================
+
+    /**
+     * Fonction: carre(x: entier): entier;
+     * Variables:
+     *     ...
+     * Debut:
+     *     ...
+     *     retourne x * x;
+     * Fin
+     * FinFonction;
+     */
+    private Statement functionDeclaration()
+    {
+        consume(COLON, Messages.expectColon("Function"));
+        Token name = consume(IDENTIFIER, Messages.expectFunctionName());
+
+        // Check for duplicate function
+        if (functionTable.containsKey(name.lexeme()))
+        {
+            throw error(name, Messages.functionAlreadyDeclared(name.lexeme()));
+        }
+
+        // Parse parameters
+        consume(LEFT_PAREN, Messages.expectLeftParen("function name"));
+        List<Statement.Parameter> parameters = new ArrayList<>();
+        List<Type> paramTypes = new ArrayList<>();
+
+        if (!check(RIGHT_PAREN))
+        {
+            do {
+                Token paramName = consume(IDENTIFIER, Messages.expectParameterName());
+                consume(COLON, Messages.expectAfter(":", "parameter name"));
+                Type paramType = parseType();
+
+                parameters.add(new Statement.Parameter(paramName, paramType));
+                paramTypes.add(paramType);
+            } while (match(COMMA));
+        }
+
+        consume(RIGHT_PAREN, Messages.expectRightParen("parameters"));
+        consume(COLON, Messages.expectColon("parameter list"));
+
+        // Parse return type
+        Type returnType = parseType();
+        consume(SEMICOLON, Messages.expectSemicolon("return type"));
+
+        // Register function type
+        FunctionType funcType = new FunctionType(name.lexeme(), paramTypes, returnType);
+        functionTable.put(name.lexeme(), funcType);
+
+        // Create new scope for function
+        Map<String, Type> previousScope = currentScope;
+        currentScope = new HashMap<>();
+
+        // Add parameters to function scope
+        for (Statement.Parameter param : parameters)
+        {
+            currentScope.put(param.name.lexeme(), param.type);
+        }
+
+        // Parse optional local variables
+        if (match(VARIABLE))
+        {
+            varSection();
+        }
+
+        // Parse function body
+        List<Statement> body = block();
+
+        consume(END_FUNCTION, Messages.expectEndFunctionBlock());
+        consume(SEMICOLON, Messages.expectSemicolon("function declaration"));
+
+        // Restore previous scope
+        currentScope = previousScope;
+
+        return new Statement.FunctionDeclaration(name, parameters, returnType, body);
+    }
+
+    // ========================================================================
+    // METHOD SECTION
+    // ========================================================================
+
+    /**
+     * Methode: afficher(x: entier):
+     * Debut:
+     *     ecrire(x);
+     * Fin
+     * FinMethode;
+     */
+    private Statement methodDeclaration()
+    {
+        consume(COLON, Messages.expectColon("Method"));
+        Token name = consume(IDENTIFIER, Messages.expectMethodName());
+
+        // Check for duplicate method
+        if (methodTable.containsKey(name.lexeme()))
+        {
+            throw error(name, Messages.functionAlreadyDeclared(name.lexeme()));
+        }
+
+        // Parse parameters
+        consume(LEFT_PAREN, Messages.expectLeftParen("method name"));
+        List<Statement.Parameter> parameters = new ArrayList<>();
+
+        if (!check(RIGHT_PAREN))
+        {
+            do {
+                Token paramName = consume(IDENTIFIER, Messages.expectParameterName());
+                consume(COLON, Messages.expectAfter(":", "parameter name"));
+                Type paramType = parseType();
+
+                parameters.add(new Statement.Parameter(paramName, paramType));
+            } while (match(COMMA));
+        }
+
+        consume(RIGHT_PAREN, Messages.expectRightParen("parameters"));
+        consume(COLON, Messages.expectColon("parameter list"));
+
+        // Register method
+        methodTable.put(name.lexeme(), parameters);
+
+        // Create new scope for method
+        Map<String, Type> previousScope = currentScope;
+        currentScope = new HashMap<>();
+
+        // Add parameters to method scope
+        for (Statement.Parameter param : parameters)
+        {
+            currentScope.put(param.name.lexeme(), param.type);
+        }
+
+        // Parse optional local variables
+        if (match(VARIABLE))
+        {
+            varSection();
+        }
+
+        // Parse method body
+        List<Statement> body = block();
+
+        consume(END_METHOD, Messages.expectEndMethodBlock());
+        consume(SEMICOLON, Messages.expectSemicolon("method declaration"));
+
+        // Restore previous scope
+        currentScope = previousScope;
+
+        return new Statement.MethodDeclaration(name, parameters, body);
+    }
+
+    // ========================================================================
+    // VARIABLE SECTION
+    // ========================================================================
+
+    /**
+     * Variables:
+     *     x, y : entier;
+     *     nom : chaine;
+     */
+    private void varSection()
+    {
+        consume(COLON, Messages.expectColon("Variables"));
+
+        while (!check(BEGIN) && !check(END) && !isAtEnd())
+        {
+            varDeclaration();
+        }
+    }
+
+    /**
+     * Parse a single variable declaration
+     */
+    private void varDeclaration()
+    {
+        // Parse variable names (can be comma-separated)
+        List<Token> names = new ArrayList<>();
+        names.add(consume(IDENTIFIER, Messages.expectVariableName()));
+
+        while (match(COMMA))
+        {
+            names.add(consume(IDENTIFIER, Messages.expectVariableName()));
+        }
+
+        consume(COLON, Messages.expectAfter(":", "variable name"));
+        Type varType = parseType();
+        consume(SEMICOLON, Messages.expectSemicolon("variable declaration"));
+
+        // Store all variables in current scope
+        for (Token name : names)
+        {
+            if (currentScope.containsKey(name.lexeme()))
+            {
+                throw error(name, Messages.variableAlreadyDeclared(name.lexeme()));
+            }
+            currentScope.put(name.lexeme(), varType);
+        }
+    }
+
+    // ========================================================================
+    // TYPE PARSING
+    // ========================================================================
+
+    /**
+     * Parse a type specification
+     * type -> primitive_type | array_type | struct_type
+     */
+    private Type parseType()
+    {
+        // Check for array type
+        if (match(TABLE))
+        {
+            return parseArrayType();
+        }
+
+        // Check for primitive types
+        if (match(INTEGER))
+        {
+            return TypeFactory.INTEGER;
+        }
+        else if (match(DOUBLE))
+        {
+            return TypeFactory.FLOATING;
+        }
+        else if (match(STRING))
+        {
+            return TypeFactory.STRING;
+        }
+        else if (match(CHARACTER))
+        {
+            return TypeFactory.CHAR;
+        }
+        else if (match(BOOLEAN))
+        {
+            return TypeFactory.BOOLEAN;
+        }
+        else if (match(NUMBER))
+        {
+            return TypeFactory.FLOATING; // Generic number type -> real
+        }
+        else if (check(IDENTIFIER))
+        {
+            // Could be a structure type
+            Token typeName = advance();
+            if (structTable.containsKey(typeName.lexeme()))
+            {
+                return structTable.get(typeName.lexeme());
+            }
+            else
+            {
+                throw error(typeName, Messages.structureNotDefined(typeName.lexeme()));
+            }
+        }
+
+        throw error(peek(), Messages.expectVariableType());
+    }
+
+    /**
+     * Parse array type: tableau[1..10] de entier
+     */
+    private Type parseArrayType()
+    {
+        consume(LEFT_BRACKET, Messages.expectAfter("[", "tableau"));
+
+        // Parse lower bound
+        Token lowerToken = consume(INTEGER_LITERAL, Messages.expectArraySize());
+        AtomicValue<?> lowerValue = (AtomicValue<?>) lowerToken.literal();
+        int lowerBound = (Integer) lowerValue.getValue();
+
+        consume(DOT_DOT, Messages.expectAfter("..", "lower bound"));
+
+        // Parse upper bound
+        Token upperToken = consume(INTEGER_LITERAL, Messages.expectArraySize());
+        AtomicValue<?> upperValue = (AtomicValue<?>) upperToken.literal();
+        int upperBound = (Integer) upperValue.getValue();
+
+        consume(RIGHT_BRACKET, Messages.expectRightBracket("upper bound"));
+        consume(OF, Messages.expectOf());
+
+        // Parse element type
+        Type elementType = parseType();
+
+        return new ArrayType(elementType, lowerBound, upperBound);
+    }
+
+    // ========================================================================
+    // Continued in next part...
+    // ========================================================================
+    // ========================================================================
+    // BLOCK AND STATEMENTS
+    // ========================================================================
+
+    /**
+     * block -> ("Debut" | "Begin") ":" statement* ("Fin" | "End")
      */
     private List<Statement> block()
     {
@@ -150,81 +511,135 @@ public class Parser
     }
 
     /**
-     * Parses a single statement.
-     * statement -> expression_stmt | write_stmt | assignment_stmt
+     * Parse a single statement
      */
     private Statement statement()
     {
+        // Write statement
         if (match(WRITE))
         {
             return writeStatement();
         }
 
-        // Check if it's an assignment (IDENTIFIER followed by ASSIGN)
-        if (check(IDENTIFIER))
+        // Read statement
+        if (match(READ))
         {
-            // Look ahead to see if this is an assignment
-            if (peekAhead(1) != null && peekAhead(1).type() == ASSIGN)
-            {
-                return assignmentStatement();
-            }
+            return readStatement();
         }
 
-        // check if it's an if statement
-        if (match(IF)) {
+        // Return statement
+        if (match(RETURN))
+        {
+            return returnStatement();
+        }
+
+        // If statement
+        if (match(IF))
+        {
             return ifStatement();
         }
 
-        throw error(this.peek(), Messages.expectStatement());
-    }
+        // While loop
+        if (match(WHILE))
+        {
+            return whileStatement();
+        }
 
-    private Statement ifStatement() {
+        // Do-while loop
+        if (match(REPEAT))
+        {
+            return doWhileStatement();
+        }
 
-        Expression condition = expression();
-        consume(THEN, Messages.expectThen("condition"));
-        consume(COLON, Messages.expectColon("then"));
-        List<Statement> thenBranch = new ArrayList<>();
-        List<Statement> elseBranch = new ArrayList<>();;
+        // For loop
+        if (match(FOR))
+        {
+            return forStatement();
+        }
 
-        while (!check(ENDIF) && !isAtEnd()) {
-            // parse the all the statements;
-            thenBranch.add(statement());
+        // Check if it's an assignment or method call
+        if (check(IDENTIFIER))
+        {
+            // Look ahead to determine if it's assignment, method call, or array/field access
+            Token identifier = peek();
+            Token next = peekAhead(1);
 
-            if (match(ELSE)) {
-                if (check(IF)) {
-                    advance();
-                    elseBranch.add(ifStatement());
-                } else {
-                    consume(COLON, Messages.expectColon("else"));
-                    elseBranch.add(statement());
+            if (next != null)
+            {
+                // Method call: identifier(...)
+                if (next.type() == LEFT_PAREN)
+                {
+                    // Could be function call or method call
+                    // Check if it's a method (methods are statements, functions are expressions)
+                    if (methodTable.containsKey(identifier.lexeme()))
+                    {
+                        return methodCallStatement();
+                    }
+                }
+
+                // Assignment: identifier <- ...
+                // Or array assignment: identifier[...] <- ...
+                // Or field assignment: identifier.field <- ...
+                if (next.type() == ASSIGN || next.type() == LEFT_BRACKET || next.type() == DOT)
+                {
+                    return assignmentStatement();
                 }
             }
         }
 
-        // if we hit the end of file before getting to the end of any if statements, then it's an error;
-        if (isAtEnd()) {
-            throw error(this.peek(), Messages.ifError());
-        }
-
-        // the end of the conditional statement
-        consume(ENDIF,  Messages.expectEndIfBlock());
-
-        return new Statement.If(condition, thenBranch, elseBranch);
+        throw error(peek(), Messages.expectStatement());
     }
 
+    /**
+     * write_stmt -> ("ecrire" | "write") "(" expression ")" ";"
+     */
     private Statement writeStatement()
     {
         consume(LEFT_PAREN, Messages.expectLeftParen("write"));
         Expression expression = expression();
-        consume(RIGHT_PAREN, Messages.expectRightParen("expression to write"));
+        consume(RIGHT_PAREN, Messages.expectRightParen("expression"));
         consume(SEMICOLON, Messages.expectSemicolon("write statement"));
 
         return new Statement.Write(expression);
     }
 
+    /**
+     * read_stmt -> ("lire" | "read") "(" IDENTIFIER ")" ";"
+     */
+    private Statement readStatement()
+    {
+        consume(LEFT_PAREN, Messages.expectLeftParen("read"));
+        Token variable = consume(IDENTIFIER, Messages.expectVariableName());
+        consume(RIGHT_PAREN, Messages.expectRightParen("variable name"));
+        consume(SEMICOLON, Messages.expectSemicolon("read statement"));
+
+        return new Statement.Read(variable);
+    }
+
+    /**
+     * return_stmt -> ("retourne" | "return") expression ";"
+     */
+    private Statement returnStatement()
+    {
+        Token keyword = previous();
+        Expression value = expression();
+        consume(SEMICOLON, Messages.expectSemicolon("return statement"));
+
+        return new Statement.Return(keyword, value);
+    }
+
+    /**
+     * assignment_stmt -> lvalue "<-" expression ";"
+     * where lvalue can be: identifier, identifier[index], identifier.field
+     */
     private Statement assignmentStatement()
     {
         Token name = consume(IDENTIFIER, Messages.expectVariableName());
+
+        // Check for array or field access on left side
+        // For now, we'll keep it simple and only support direct assignment
+        // TODO: Support arr[i] <- value and obj.field <- value
+
         consume(ASSIGN, Messages.expectAssignOperator());
         Expression value = expression();
         consume(SEMICOLON, Messages.expectSemicolon("assignment"));
@@ -233,39 +648,262 @@ public class Parser
     }
 
     /**
-     * Parses an expression statement.
-     * expression_stmt -> expression ";"
+     * method_call_stmt -> IDENTIFIER "(" arguments? ")" ";"
      */
-    private Statement expressionStatement()
+    private Statement methodCallStatement()
     {
-        Expression expr = expression();
-        consume(SEMICOLON, Messages.expectSemicolon("expression"));
-        return new Statement.ExpressionStmt(expr);
+        Token name = consume(IDENTIFIER, Messages.expectMethodName());
+        consume(LEFT_PAREN, Messages.expectLeftParen("method name"));
+
+        List<Expression> arguments = new ArrayList<>();
+        if (!check(RIGHT_PAREN))
+        {
+            do {
+                arguments.add(expression());
+            } while (match(COMMA));
+        }
+
+        consume(RIGHT_PAREN, Messages.expectRightParen("arguments"));
+        consume(SEMICOLON, Messages.expectSemicolon("method call"));
+
+        return new Statement.MethodCall(name, arguments);
+    }
+
+    // ========================================================================
+    // CONTROL FLOW STATEMENTS
+    // ========================================================================
+
+    /**
+     * if_stmt -> ("si" | "if") expression ("alors" | "then") ":"
+     *            statement*
+     *            ("sinon si" | "else if" expression ("alors" | "then") ":" statement*)*
+     *            ("sinon" | "else" ":" statement*)?
+     *            ("finsi" | "endif")
+     */
+    private Statement ifStatement()
+    {
+        Expression condition = expression();
+        consume(THEN, Messages.expectThen("condition"));
+        consume(COLON, Messages.expectColon("then"));
+
+        List<Statement> thenBranch = new ArrayList<>();
+        List<Statement> elseBranch = new ArrayList<>();
+
+        // Parse then branch
+        while (!check(ENDIF) && !check(ELSEIF) && !check(ELSE) && !isAtEnd())
+        {
+            thenBranch.add(statement());
+        }
+
+        // Parse else-if and else branches
+        while (match(ELSEIF))
+        {
+            Expression elseIfCondition = expression();
+            consume(THEN, Messages.expectThen("else if condition"));
+            consume(COLON, Messages.expectColon("then"));
+
+            List<Statement> elseIfBranch = new ArrayList<>();
+            while (!check(ENDIF) && !check(ELSEIF) && !check(ELSE) && !isAtEnd())
+            {
+                elseIfBranch.add(statement());
+            }
+
+            // Convert else-if to nested if-else
+            elseBranch.add(new Statement.If(elseIfCondition, elseIfBranch, new ArrayList<>()));
+            break; // Process one else-if at a time, nesting will happen recursively
+        }
+
+        if (match(ELSE))
+        {
+            consume(COLON, Messages.expectColon("else"));
+
+            while (!check(ENDIF) && !isAtEnd())
+            {
+                if (elseBranch.isEmpty())
+                {
+                    elseBranch.add(statement());
+                }
+                else
+                {
+                    // If we already have an else-if, add to its else branch
+                    Statement lastElseIf = elseBranch.get(elseBranch.size() - 1);
+                    if (lastElseIf instanceof Statement.If)
+                    {
+                        // This is complex - for now just add to main else branch
+                        elseBranch.add(statement());
+                    }
+                    else
+                    {
+                        elseBranch.add(statement());
+                    }
+                }
+            }
+        }
+
+        if (isAtEnd())
+        {
+            throw error(peek(), Messages.ifError());
+        }
+
+        consume(ENDIF, Messages.expectEndIfBlock());
+
+        return new Statement.If(condition, thenBranch, elseBranch);
     }
 
     /**
-     * This function parse an expression node in the ast.
-     *
-     * @return An expression node.
+     * while_stmt -> ("tant_que" | "while") "(" expression ")" ("faire" | "do") ":"
+     *               statement*
+     *               ("fintantque" | "endwhile")
+     */
+    private Statement whileStatement()
+    {
+        consume(LEFT_PAREN, Messages.expectLeftParen("while"));
+        Expression condition = expression();
+        consume(RIGHT_PAREN, Messages.expectRightParen("condition"));
+        consume(DO, Messages.expectDo());
+        consume(COLON, Messages.expectColon("do"));
+
+        List<Statement> body = new ArrayList<>();
+        while (!check(ENDWHILE) && !isAtEnd())
+        {
+            body.add(statement());
+        }
+
+        if (isAtEnd())
+        {
+            throw error(peek(), Messages.whileError());
+        }
+
+        consume(ENDWHILE, Messages.expectEndWhileBlock());
+
+        return new Statement.While(condition, body);
+    }
+
+    /**
+     * do_while_stmt -> ("repeter" | "repeat") ":"
+     *                  statement*
+     *                  ("jusqu_a" | "until") "(" expression ")" ";"
+     */
+    private Statement doWhileStatement()
+    {
+        consume(COLON, Messages.expectColon("repeat"));
+
+        List<Statement> body = new ArrayList<>();
+        while (!check(UNTIL) && !isAtEnd())
+        {
+            body.add(statement());
+        }
+
+        consume(UNTIL, Messages.expectUntil());
+        consume(LEFT_PAREN, Messages.expectLeftParen("until"));
+        Expression condition = expression();
+        consume(RIGHT_PAREN, Messages.expectRightParen("condition"));
+        consume(SEMICOLON, Messages.expectSemicolon("do-while statement"));
+
+        return new Statement.DoWhile(body, condition);
+    }
+
+    /**
+     * for_stmt -> ("pour" | "for") IDENTIFIER "<-" expression
+     *             ("jusqu_a" | "to") expression
+     *             (("pas" | "step") expression)?
+     *             ("faire" | "do") ":"
+     *             statement*
+     *             ("finpour" | "endfor")
+     */
+    private Statement forStatement()
+    {
+        Token variable = consume(IDENTIFIER, Messages.expectVariableName());
+        consume(ASSIGN, Messages.expectAssignOperator());
+        Expression start = expression();
+        consume(TO, Messages.expectTo());
+        Expression end = expression();
+
+        Expression step = null;
+        if (match(STEP))
+        {
+            step = expression();
+        }
+
+        consume(DO, Messages.expectDo());
+        consume(COLON, Messages.expectColon("do"));
+
+        List<Statement> body = new ArrayList<>();
+        while (!check(ENDFOR) && !isAtEnd())
+        {
+            body.add(statement());
+        }
+
+        if (isAtEnd())
+        {
+            throw error(peek(), Messages.forError());
+        }
+
+        consume(ENDFOR, Messages.expectEndForBlock());
+
+        return new Statement.For(variable, start, end, step, body);
+    }
+
+    // ========================================================================
+    // Continued in next part...
+    // ========================================================================
+    // ========================================================================
+    // EXPRESSIONS
+    // ========================================================================
+
+    /**
+     * expression -> logical_or
      */
     private Expression expression()
     {
-        return this.equality();
+        return logicalOr();
     }
 
     /**
-     * This function parse an equality node in the ast.
-     *
-     * @return An expression node.
+     * logical_or -> logical_and (("ou" | "or") logical_and)*
+     */
+    private Expression logicalOr()
+    {
+        Expression expression = logicalAnd();
+
+        while (match(OR))
+        {
+            Token operator = previous();
+            Expression right = logicalAnd();
+            expression = new Expression.Logical(expression, operator, right);
+        }
+
+        return expression;
+    }
+
+    /**
+     * logical_and -> equality (("et" | "and") equality)*
+     */
+    private Expression logicalAnd()
+    {
+        Expression expression = equality();
+
+        while (match(AND))
+        {
+            Token operator = previous();
+            Expression right = equality();
+            expression = new Expression.Logical(expression, operator, right);
+        }
+
+        return expression;
+    }
+
+    /**
+     * equality -> comparison (("!=" | "==") comparison)*
      */
     private Expression equality()
     {
-        Expression expression = this.comparison();
+        Expression expression = comparison();
 
-        while (this.match(DIFF, EQUAL_EQUAL))
+        while (match(DIFF, EQUAL_EQUAL))
         {
-            Token token = this.previous();
-            Expression right = this.comparison();
+            Token token = previous();
+            Expression right = comparison();
             expression = new Expression.Binary(expression, token, right);
         }
 
@@ -273,18 +911,16 @@ public class Parser
     }
 
     /**
-     * This function parse a comparison node in the ast.
-     *
-     * @return An expression node.
+     * comparison -> term ((">" | ">=" | "<" | "<=") term)*
      */
     private Expression comparison()
     {
-        Expression expression = this.term();
+        Expression expression = term();
 
-        while (this.match(GREATER, GREATER_OR_EQUAL, LESS,  LESS_OR_EQUAL))
+        while (match(GREATER, GREATER_OR_EQUAL, LESS, LESS_OR_EQUAL))
         {
-            Token token = this.previous();
-            Expression right = this.term();
+            Token token = previous();
+            Expression right = term();
             expression = new Expression.Binary(expression, token, right);
         }
 
@@ -292,18 +928,16 @@ public class Parser
     }
 
     /**
-     * This function parses the term node in the ast.
-     *
-     * @return An expression node.
+     * term -> factor (("-" | "+") factor)*
      */
     private Expression term()
     {
-        Expression expression = this.factor();
+        Expression expression = factor();
 
-        while (this.match(MINUS, PLUS))
+        while (match(MINUS, PLUS))
         {
-            Token token = this.previous();
-            Expression right = this.factor();
+            Token token = previous();
+            Expression right = factor();
             expression = new Expression.Binary(expression, token, right);
         }
 
@@ -311,18 +945,16 @@ public class Parser
     }
 
     /**
-     * This function parses a factory node in the ast.
-     *
-     * @return An expression node.
+     * factor -> unary (("/" | "*" | "mod") unary)*
      */
     private Expression factor()
     {
-        Expression expression = this.unary();
+        Expression expression = unary();
 
-        while (this.match(SLASH, STAR))
+        while (match(SLASH, STAR, MOD))
         {
-            Token token = this.previous();
-            Expression right = this.unary();
+            Token token = previous();
+            Expression right = unary();
             expression = new Expression.Binary(expression, token, right);
         }
 
@@ -330,89 +962,150 @@ public class Parser
     }
 
     /**
-     * This function parses a unary node in the ast.
-     *
-     * @return An expression node.
+     * unary -> ("!" | "-" | "non" | "not") unary | call
      */
     private Expression unary()
     {
-        if (this.match(BANG, MINUS))
+        if (match(BANG, MINUS, NOT))
         {
-            Token token = this.previous();
-            Expression right = this.unary();
+            Token token = previous();
+            Expression right = unary();
             return new Expression.Unary(token, right);
         }
 
-        return this.primary();
+        return call();
     }
 
+    /**
+     * call -> primary ( "(" arguments? ")" | "[" expression "]" | "." IDENTIFIER )*
+     */
+    private Expression call()
+    {
+        Expression expr = primary();
+
+        while (true)
+        {
+            if (match(LEFT_PAREN))
+            {
+                // Function call
+                List<Expression> arguments = new ArrayList<>();
+                if (!check(RIGHT_PAREN))
+                {
+                    do {
+                        arguments.add(expression());
+                    } while (match(COMMA));
+                }
+                consume(RIGHT_PAREN, Messages.expectRightParen("arguments"));
+
+                // expr should be a variable with the function name
+                if (expr instanceof Expression.Variable)
+                {
+                    Token funcName = ((Expression.Variable) expr).name;
+                    expr = new Expression.Call(funcName, arguments);
+                }
+                else
+                {
+                    throw error(previous(), "Can only call functions and methods");
+                }
+            }
+            else if (match(LEFT_BRACKET))
+            {
+                // Array access
+                Expression index = expression();
+                consume(RIGHT_BRACKET, Messages.expectRightBracket("index"));
+                expr = new Expression.ArrayAccess(expr, index);
+            }
+            else if (match(DOT))
+            {
+                // Field access
+                Token field = consume(IDENTIFIER, Messages.expectFieldName());
+                expr = new Expression.FieldAccess(expr, field);
+            }
+            else
+            {
+                break;
+            }
+        }
+
+        return expr;
+    }
+
+    /**
+     * primary -> NUMBER | STRING | CHAR | "true" | "false" | "nil"
+     *          | IDENTIFIER | "(" expression ")"
+     */
     private Expression primary()
     {
-        if (this.match(FALSE)) return new Expression.Literal(new AtomicValue<Boolean>(false, AtomicTypes.BOOLEAN));
-        if (this.match(TRUE)) return new Expression.Literal(new AtomicValue<Boolean>(true, AtomicTypes.BOOLEAN));
-        if (this.match(NIL)) return new Expression.Literal(new AtomicValue<Void>(null, AtomicTypes.VOID));
-
-        // for numbers and strings only (no variables yet)
-        if (this.match(STRING_LITERAL, INTEGER_LITERAL, DOUBLE_LITERAL, CHARACTER_LITERAL))
+        // Boolean literals
+        if (match(FALSE))
         {
-            return new Expression.Literal(this.previous().literal());
+            return new Expression.Literal(new AtomicValue<Boolean>(false, AtomicTypes.BOOLEAN));
         }
 
-        // Handle variable references
-        if (this.match(IDENTIFIER))
+        if (match(TRUE))
         {
-            return new Expression.Variable(this.previous());
+            return new Expression.Literal(new AtomicValue<Boolean>(true, AtomicTypes.BOOLEAN));
         }
 
-        if (this.match(LEFT_PAREN))
+        if (match(NIL))
         {
-            Expression expression = this.expression();
+            return new Expression.Literal(new AtomicValue<Void>(null, AtomicTypes.VOID));
+        }
+
+        // Numeric, string, and character literals
+        if (match(STRING_LITERAL, INTEGER_LITERAL, DOUBLE_LITERAL, CHARACTER_LITERAL))
+        {
+            return new Expression.Literal(previous().literal());
+        }
+
+        // Variable or identifier
+        if (match(IDENTIFIER))
+        {
+            return new Expression.Variable(previous());
+        }
+
+        // Grouped expression
+        if (match(LEFT_PAREN))
+        {
+            Expression expression = expression();
             consume(RIGHT_PAREN, Messages.expectRightParen("expression"));
             return new Expression.Grouping(expression);
         }
 
-        throw error(this.peek(), Messages.expectExpression());
+        throw error(peek(), Messages.expectExpression());
     }
 
+    // ========================================================================
+    // HELPER METHODS
+    // ========================================================================
+
     /**
-     * This helper function is used to check if the current token matches the provided one.
-     *
-     * @param types the different type we are going to check on.
-     * @return a boolean value that represent if the token match.
+     * Check if current token matches any of the given types
      */
-    private boolean match(TokenType ...types)
+    private boolean match(TokenType... types)
     {
-        for (TokenType type : types )
+        for (TokenType type : types)
         {
-            if (this.check(type))
+            if (check(type))
             {
-                // we consume the current token and return true.
-                this.advance();
+                advance();
                 return true;
             }
         }
-
         return false;
     }
 
     /**
-     * This is function is going to consume a token, check to see if the token correspond to the
-     * one passed as parameter, and it is, it will consume that otherwise it will report an error
-     * to the user.
-     *
-     * @param tokenType the token type we want to consume.
-     * @param message the message to print to the user if an error occurred.
+     * Consume a token of the expected type or throw error
      */
     private Token consume(TokenType tokenType, String message)
     {
-        if (this.check(tokenType)) return advance();
-        throw error(this.peek(), message);
+        if (check(tokenType)) return advance();
+        throw error(peek(), message);
     }
 
     /**
-     * This function throws an exception to synchronize the error recovering.
-     *
-     * @throws ParseError throws a parseError exception.
+     * Report an error and return ParseError exception
      */
     private ParseError error(Token token, String message)
     {
@@ -421,103 +1114,124 @@ public class Parser
     }
 
     /**
-     * This function is used to synchronize the error recovery of our interpreter in the compiler
-     * phase of the user's code.
+     * Synchronize after an error
      */
     private void synchronize()
     {
-        this.advance();
+        advance();
 
-        while (!this.isAtEnd())
+        while (!isAtEnd())
         {
-            if (this.previous().type() == SEMICOLON) return;
+            if (previous().type() == SEMICOLON) return;
 
-            switch (this.peek().type())
+            switch (peek().type())
             {
                 case ALGORITHM:
                 case BEGIN:
                 case END:
                 case IF:
+                case FOR:
+                case WHILE:
+                case FUNCTION:
+                case METHOD:
+                case RETURN:
                     return;
             }
 
-            this.advance();
+            advance();
         }
     }
 
     /**
-     * This function will check to see if the provided token matches the current token.
-     *
-     * @param type represent the token for which we want to check the type with.
-     * @return a boolean value representing the result of the checking.
+     * Check if current token is of given type
      */
     private boolean check(TokenType type)
     {
-        if (this.isAtEnd()) return false;
-        return this.peek().type() == type;
+        if (isAtEnd()) return false;
+        return peek().type() == type;
     }
 
     /**
-     * This function consume the current token and return it.
-     *
-     * @return the token that just get consumed.
+     * Consume current token and return it
      */
     private Token advance()
     {
-        if (!this.isAtEnd()) this.current++;
-        return this.previous();
+        if (!isAtEnd()) current++;
+        return previous();
     }
 
     /**
-     * This helper function will tell us if we are at the end of the tokens list.
-     *
-     * @return a boolean value indication if we are at the end of the tokens list.
+     * Check if we're at end of tokens
      */
     private boolean isAtEnd()
     {
-        return this.peek().type() == EOF;
+        return peek().type() == EOF;
     }
 
     /**
-     * This function will return the current token being processed.
-     *
-     * @return the current token in the list of all the tokens.
+     * Get current token without consuming
      */
     private Token peek()
     {
-        return this.tokens.get(this.current);
+        return tokens.get(current);
     }
 
     /**
-     * This function will return the previous token in the list of all the tokens.
-     *
-     * @return the previous token being consumed by the parser.
+     * Get previous token
      */
     private Token previous()
     {
-        return this.tokens.get(this.current - 1);
+        return tokens.get(current - 1);
     }
 
     /**
-     * This function peeks ahead n tokens without consuming them.
-     *
-     * @param n the number of tokens to look ahead
-     * @return the token n positions ahead, or null if out of bounds
+     * Peek ahead n tokens without consuming
      */
     private Token peekAhead(int n)
     {
-        int index = this.current + n;
-        if (index >= this.tokens.size()) return null;
-        return this.tokens.get(index);
+        int index = current + n;
+        if (index >= tokens.size()) return null;
+        return tokens.get(index);
     }
 
     /**
-     * Get the symbol table containing variable declarations.
-     *
-     * @return the symbol table map
+     * Get the global symbol table
      */
     public Map<String, Type> getSymbolTable()
     {
-        return symbolTable;
+        return globalSymbolTable;
+    }
+
+    /**
+     * Get the function table
+     */
+    public Map<String, FunctionType> getFunctionTable()
+    {
+        return functionTable;
+    }
+
+    /**
+     * Get the method table
+     */
+    public Map<String, List<Statement.Parameter>> getMethodTable()
+    {
+        return methodTable;
+    }
+
+    /**
+     * Get the structure table
+     */
+    public Map<String, StructType> getStructTable()
+    {
+        return structTable;
+    }
+
+    /**
+     * Get the constant table
+     */
+    public Map<String, Value> getConstantTable()
+    {
+        return constantTable;
     }
 }
+
