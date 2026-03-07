@@ -126,18 +126,11 @@ public class Main
     {
         Scanner scanner = new Scanner(script);
         List<Token> tokens = scanner.scanTokens();
-//        tokens.stream()
-//                .filter(token -> token.lexeme().equals("quit"))
-//                .findFirst()
-//                .ifPresentOrElse(
-//                        token -> System.exit(0),
-//                        () -> tokens.forEach(System.out::println)
-//                );
 
         Parser parser = new Parser(tokens);
         List<Statement> statements = parser.parse();
 
-        /*if (!hadError)
+        if (!hadError)
         {
             try
             {
@@ -158,7 +151,7 @@ public class Main
         if (!hadError)
         {
             interpreter.interpret(statements);
-        }*/
+        }
     }
 
     /**
@@ -170,7 +163,7 @@ public class Main
     public static void runCode(String code) throws IOException
     {
         run(code);
-        hadError = false;  // Reset error state for REPL
+        hadError = false;
         hadRuntimeError = false;
     }
 

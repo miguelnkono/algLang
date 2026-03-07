@@ -17,7 +17,7 @@ class CheckerTest
   @BeforeEach
   void setUp()
   {
-    checker = new Checker();
+//    checker = new Checker();
   }
 
   @AfterEach
