@@ -1,48 +1,25 @@
+Algorithme: methodes;
 
-// en français;
-Algorithm: methodes;
-
-Methode: bonjour(nom: chaine_caractère):
-    ecrire("bonjour " + nom);
+Methode: afficherMessage(msg: chaine_charactere):
+Debut:
+    ecrire("=================");
+    ecrire(msg);
+    ecrire("=================");
+Fin
 FinMethode;
 
-Function: cube(arg: nombre): reel;
-    retourne arg * arg * arg;
-FinFunction;
-
+Methode: afficherTableMultiplication(n: entier):
 Variables:
-    arg : reel;
-    nom: chaine_caractère;
+    i : entier;
 Debut:
-    nom <- "miguel";
-    bonjour(nom);
-
-    ecrire("entryez un nombre: ");
-    lire(arg);
-
-    ecrire("le cube de " + arg + " est: " + cube(arg));
+    ecrire("Table de " + n + ":");
+    pour i <- 1 jusqu_a 10 faire:
+        ecrire(n + " x " + i + " = " + (n * i));
+    finpour
 Fin
+FinMethode;
 
-// in english;
-Algorithm: TestTwo;
-
-Method: hello(name: string):
-    write("hello " + name);
-EndMethod;
-
-Function: cube(arg: nombre): real;
-    return arg * arg * arg;
-FinFunction;
-
-Variables:
-    arg: real;
-    name: string;
-Begin:
-    name <- "miguel";
-    hello(name);
-
-    write("enter a number: ");
-    read(arg);
-
-    write("the cube of " + arg + " is: " + cube(arg));
-End
+Debut:
+    afficherMessage("Bienvenue!");
+    afficherTableMultiplication(7);
+Fin

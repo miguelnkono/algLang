@@ -1,15 +1,7 @@
 package io.dream.config;
 
-/**
- * Utility class for bilingual messages (French/English)
- * Complete version with all error messages
- */
 public class Messages
 {
-    // ========================================================================
-    // PARSER MESSAGES
-    // ========================================================================
-
     public static String expectAfter(String expected, String after) {
         return Config.getLanguage()
                 ? "Attend '" + expected + "' après '" + after + "'."
@@ -26,6 +18,84 @@ public class Messages
         return Config.getLanguage()
                 ? "Attend ';' après " + after + "."
                 : "Expect ';' after " + after + ".";
+    }
+
+    public static String invalidFileMode(String mode) {
+        return Config.getLanguage() ?
+                "Mode de fichier invalide: " + mode + ". Utilisez 'r', 'w' ou 'a'." :
+                "Invalid file mode: " + mode + ". Use 'r', 'w', or 'a'.";
+    }
+
+    public static String fileNotFound(String filename) {
+        return Config.getLanguage() ?
+                "Fichier introuvable: " + filename :
+                "File not found: " + filename;
+    }
+
+    public static String fileOpenError(String filename, String error) {
+        return Config.getLanguage() ?
+                "Erreur d'ouverture du fichier " + filename + ": " + error :
+                "Error opening file " + filename + ": " + error;
+    }
+
+    public static String fileNotOpenForReading(String filename) {
+        return Config.getLanguage() ?
+                "Le fichier " + filename + " n'est pas ouvert en lecture" :
+                "File " + filename + " is not open for reading";
+    }
+
+    public static String fileNotOpenForWriting(String filename) {
+        return Config.getLanguage() ?
+                "Le fichier " + filename + " n'est pas ouvert en ecriture" :
+                "File " + filename + " is not open for writing";
+    }
+
+    public static String fileAlreadyClosed(String filename) {
+        return Config.getLanguage() ?
+                "Le fichier " + filename + " est deja ferme" :
+                "File " + filename + " is already closed";
+    }
+
+    public static String fileReadError(String filename, String error) {
+        return Config.getLanguage() ?
+                "Erreur de lecture du fichier " + filename + ": " + error :
+                "Error reading file " + filename + ": " + error;
+    }
+
+    public static String fileWriteError(String filename, String error) {
+        return Config.getLanguage() ?
+                "Erreur d'ecriture du fichier " + filename + ": " + error :
+                "Error writing file " + filename + ": " + error;
+    }
+
+    public static String fileCloseError(String filename, String error) {
+        return Config.getLanguage() ?
+                "Erreur de fermeture du fichier " + filename + ": " + error :
+                "Error closing file " + filename + ": " + error;
+    }
+
+    public static String invalidFileHandle(int handle) {
+        return Config.getLanguage() ?
+                "Handle de fichier invalide: " + handle :
+                "Invalid file handle: " + handle;
+    }
+
+    public static String unexpectedEndOfFile() {
+        return Config.getLanguage() ?
+                "Fin de fichier inattendue" :
+                "Unexpected end of file";
+    }
+
+    public static String invalidIntegerFormat(String value) {
+        return Config.getLanguage() ?
+                "Format d'entier invalide: " + value :
+                "Invalid integer format: " + value;
+    }
+
+    public static String invalidRealFormat(String value) {
+        return Config.getLanguage() ?
+                "Format de reel invalide: " + value :
+                "Invalid real format: " + value;
     }
 
     public static String expectVariableName() {
@@ -220,10 +290,6 @@ public class Messages
                 : "Expect 'of' after array size.";
     }
 
-    // ========================================================================
-    // RUNTIME ERROR MESSAGES
-    // ========================================================================
-
     public static String variableAlreadyDefined(String name) {
         return Config.getLanguage()
                 ? "Variable '" + name + "' est déjà définie."
@@ -301,10 +367,6 @@ public class Messages
                 ? "Impossible d'indexer un type qui n'est pas un tableau."
                 : "Cannot index non-array type.";
     }
-
-    // ========================================================================
-    // TYPE CHECKER MESSAGES
-    // ========================================================================
 
     public static String variableNotDeclared(String name) {
         return Config.getLanguage()
@@ -420,10 +482,6 @@ public class Messages
                 : "Loop variable must be of integer type.";
     }
 
-    // ========================================================================
-    // SCANNER MESSAGES
-    // ========================================================================
-
     public static String unterminatedString() {
         return Config.getLanguage()
                 ? "Chaîne de caractères non terminée."
@@ -465,10 +523,6 @@ public class Messages
                 ? "Lors de l'utilisation de l'interpréteur en anglais, assurez-vous d'utiliser le point (.) pour définir vos nombres réels."
                 : "When using the interpreter in English make sure to use the dot (.) to define your real numbers (floating numbers and double numbers).";
     }
-
-    // ========================================================================
-    // GENERAL MESSAGES
-    // ========================================================================
 
     public static String atLine(int line) {
         return Config.getLanguage()
@@ -540,12 +594,6 @@ public class Messages
         return Config.getLanguage()
                 ? "Type basique non reconnu: " + type
                 : "Unrecognized atomic type: " + type;
-    }
-
-    public static String fileNotFound(String filename) {
-        return Config.getLanguage()
-                ? "Fichier non trouvé: " + filename
-                : "File not found: " + filename;
     }
 
     public static String fileIOError(String message) {
