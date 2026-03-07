@@ -14,7 +14,8 @@ import io.dream.types.AtomicValue;
 import io.dream.types.Value;
 
 /**
- * The type Scanner.
+ * Scanner/Lexer for AlgoLang
+ * Supports all language features including loops, functions, methods, structures, arrays
  */
 public class Scanner
 {
@@ -58,16 +59,13 @@ public class Scanner
 
     /**
      * This function scan a single token and adds it to the tokens list
-     * return void
      */
     protected void scanToken()
     {
         char c = advance();
         switch (c)
         {
-            // single character token
-            // todo: I should find a way to switch accordingly to the --language flag on the case switch.
-            // So for now please when using the interpreter use floating number according to the language level you set.
+            // Comma - decimal separator in French
             case ',':
             {
                 if (Config.getLanguage())
@@ -80,19 +78,32 @@ public class Scanner
                     break;
                 }
             }
+
+            // Dot - decimal separator in English, also field access
             case '.':
             {
-                if (!Config.getLanguage())
+                // Check for .. (range operator for arrays)
+                if (match('.'))
                 {
-                    addToken(COMMA);
-                    break;
-                } else
-                {
-                    Main.error(this.line, Messages.wrongDecimalSeparatorFrench());
+                    addToken(DOT_DOT);
                     break;
                 }
+
+                // Check if next character is a digit (decimal number)
+                if (!Config.getLanguage() && isDigit(peek()))
+                {
+                    // This is part of a number, back up and let number() handle it
+                    current--;
+                    number();
+                    break;
+                }
+
+                // Otherwise it's a dot token (field access)
+                addToken(DOT);
+                break;
             }
 
+            // Single character tokens
             case ';':
                 addToken(SEMICOLON);
                 break;
@@ -111,8 +122,14 @@ public class Scanner
             case ']':
                 addToken(RIGHT_BRACKET);
                 break;
+            case '{':
+                addToken(LEFT_BRACE);
+                break;
+            case '}':
+                addToken(RIGHT_BRACE);
+                break;
 
-            // double character tokens
+            // Double character tokens
             case '<':
                 if (match('='))
                 {
@@ -125,60 +142,73 @@ public class Scanner
                     addToken(LESS);
                 }
                 break;
+
             case '>':
                 addToken(match('=') ? GREATER_OR_EQUAL : GREATER);
                 break;
+
             case '!':
                 addToken(match('=') ? DIFF : BANG);
                 break;
+
             case '-':
                 addToken(match('-') ? MINUS_MINUS : MINUS);
                 break;
+
             case '+':
                 addToken(match('+') ? PLUS_PLUS : PLUS);
                 break;
+
             case '/':
                 if (match('/'))
                 {
-                    // this is the case when it is a comment.
+                    // Single line comment - consume until end of line
                     while (peek() != '\n' && !isAtEnd()) advance();
-                } else
+                }
+                else if (match('*'))
                 {
-                    // in this case it is a division operator.
+                    // Multi-line comment
+                    multiLineComment();
+                }
+                else
+                {
+                    // Division operator
                     addToken(SLASH);
                 }
                 break;
+
             case '*':
                 addToken(match('*') ? STAR_STAR : STAR);
                 break;
+
             case '=':
                 addToken(match('=') ? EQUAL_EQUAL : EQUAL);
                 break;
 
-            // This indent token is used to delimit a block.
+            // Indentation (for block detection)
             case '\t':
-                // produce an INDENT token when the indentation is not followed by a new line.
                 if (this.peek() != '\n' && this.peek() != ' ' && this.peek() != '\r')
                 {
                     addToken(INDENT);
                 }
                 break;
 
-            // meaningless characters and new line character.
+            // Whitespace
             case ' ':
             case '\r':
             case '\\':
                 break;
+
             case '\n':
                 this.line++;
                 break;
 
-            // scan strings.
+            // String literals
             case '"':
                 this.string();
                 break;
 
-            // scan character literals
+            // Character literals
             case '\'':
                 this.character();
                 break;
@@ -187,10 +217,12 @@ public class Scanner
                 if (this.isDigit(c))
                 {
                     this.number();
-                } else if (this.isAlpha(c))
+                }
+                else if (this.isAlpha(c))
                 {
                     this.identifier();
-                } else
+                }
+                else
                 {
                     Main.error(line, Messages.unsupportedCharacter());
                     break;
@@ -199,8 +231,34 @@ public class Scanner
     }
 
     /**
-     * this function scan an identifier.
-     *
+     * Handle multi-line comments
+     */
+    protected void multiLineComment()
+    {
+        while (!isAtEnd())
+        {
+            if (peek() == '*' && peekNext() == '/')
+            {
+                // Consume the */
+                advance();
+                advance();
+                return;
+            }
+
+            if (peek() == '\n')
+            {
+                line++;
+            }
+
+            advance();
+        }
+
+        // If we reach here, comment was not closed
+        Main.error(line, Messages.unterminatedComment());
+    }
+
+    /**
+     * Scan an identifier or keyword
      */
     protected void identifier()
     {
@@ -208,6 +266,25 @@ public class Scanner
 
         String text = this.source.substring(this.start, this.current);
         Map<String, TokenType> keywords = Config.getLanguage() ? Config.keywordsFrench() : Config.keywordsEnglish();
+
+        // Check for multi-word keywords like "sinon si" or "else if"
+        // Peek ahead to see if this could be part of a multi-word keyword
+        if (keywords.containsKey(text))
+        {
+            // Check if this might be the start of a multi-word keyword
+            String potentialMultiWord = text + " " + peekWord();
+            if (keywords.containsKey(potentialMultiWord))
+            {
+                // Consume the whitespace
+                while (peek() == ' ' || peek() == '\t') advance();
+                // Consume the next word
+                while (isAlphaNumeric(peek())) advance();
+                TokenType type = keywords.get(potentialMultiWord);
+                this.addToken(type);
+                return;
+            }
+        }
+
         TokenType relatedTokenTypeToText = keywords.get(text);
         if (relatedTokenTypeToText == null) relatedTokenTypeToText = IDENTIFIER;
 
@@ -215,50 +292,75 @@ public class Scanner
     }
 
     /**
-     * This function scan an integer or a decimal depending on whether the number contains the
-     * comma or dot symbol in it or not.
-     *
+     * Peek at the next word without consuming it
+     */
+    protected String peekWord()
+    {
+        int savedCurrent = this.current;
+
+        // Skip whitespace
+        while (savedCurrent < source.length() &&
+                (source.charAt(savedCurrent) == ' ' || source.charAt(savedCurrent) == '\t'))
+        {
+            savedCurrent++;
+        }
+
+        // Get the word
+        int wordStart = savedCurrent;
+        while (savedCurrent < source.length() && isAlphaNumeric(source.charAt(savedCurrent)))
+        {
+            savedCurrent++;
+        }
+
+        if (savedCurrent > wordStart)
+        {
+            return source.substring(wordStart, savedCurrent);
+        }
+
+        return "";
+    }
+
+    /**
+     * Scan an integer or floating-point number
      */
     protected void number()
     {
         boolean isDecimal = false;
 
         while (this.isDigit(this.peek())) advance();
-        char number_char = (Config.getLanguage() ? ',' : '.');
 
-        // if decimal is found.
-        if (this.peek() == number_char && this.isDigit(this.peekNext()))
+        char decimalChar = (Config.getLanguage() ? ',' : '.');
+
+        // Check for decimal point
+        if (this.peek() == decimalChar && this.isDigit(this.peekNext()))
         {
             isDecimal = true;
-            advance();
+            advance(); // Consume the decimal separator
             while (this.isDigit(this.peek())) advance();
         }
 
         if (isDecimal)
         {
-            String number_digit = Config.getLanguage() ?
+            String numberStr = Config.getLanguage() ?
                     this.source.substring(this.start, this.current).replace(',', '.') :
                     this.source.substring(this.start, this.current);
-            double doubleValue = Double.parseDouble(number_digit);
+            double doubleValue = Double.parseDouble(numberStr);
             this.addToken(DOUBLE_LITERAL, new AtomicValue<Double>(doubleValue, AtomicTypes.FLOATING));
-        } else
+        }
+        else
         {
-
-            int integerValue = Integer.parseInt(this.source.substring(this.start,
-                    this.current));
+            int integerValue = Integer.parseInt(this.source.substring(this.start, this.current));
             this.addToken(INTEGER_LITERAL, new AtomicValue<Integer>(integerValue, AtomicTypes.INTEGER));
         }
     }
 
     /**
-     * This function scan through a string and construct one.
-     *
+     * Scan a string literal
      */
     protected void string()
     {
         while (this.peek() != '"' && !this.isAtEnd())
         {
-            // found a new line.
             if (this.peek() == '\n')
             {
                 this.line++;
@@ -266,22 +368,20 @@ public class Scanner
             this.advance();
         }
 
-        // if we reach the end of the line but did not finish the string.
         if (this.isAtEnd())
         {
             Main.error(line, Messages.unterminatedString());
             return;
         }
 
-        // advance to consume the end '"' character of the string.
+        // Consume the closing "
         this.advance();
         String string = this.source.substring(start + 1, current - 1);
         this.addToken(STRING_LITERAL, new AtomicValue<>(string, AtomicTypes.STRING));
     }
 
     /**
-     * This function scan through a character literal and construct one.
-     *
+     * Scan a character literal
      */
     protected void character()
     {
@@ -309,8 +409,7 @@ public class Scanner
     }
 
     /**
-     * This function return the current in the source code of the user.
-     *
+     * Peek at current character without consuming
      */
     protected char peek()
     {
@@ -318,6 +417,9 @@ public class Scanner
         return this.source.charAt(this.current);
     }
 
+    /**
+     * Peek at next character
+     */
     protected char peekNext()
     {
         if (this.current + 1 >= this.source.length()) return '\0';
@@ -325,10 +427,7 @@ public class Scanner
     }
 
     /**
-     * This function help us know if we are at the end of the file or not.
-     *
-     * @return returns whether we are at the end of the file or not
-     *
+     * Check if we're at the end of the source
      */
     protected boolean isAtEnd()
     {
@@ -336,9 +435,7 @@ public class Scanner
     }
 
     /**
-     * This function adds a new token in the tokens list.
-     * The token it adds has a literal set.
-     *
+     * Add a token with a literal value
      */
     protected void addToken(TokenType type, Value literal)
     {
@@ -347,8 +444,7 @@ public class Scanner
     }
 
     /**
-     * This function adds a new token that does not have a literal part in the tokens list.
-     *
+     * Add a token without a literal value
      */
     protected void addToken(TokenType type)
     {
@@ -356,9 +452,7 @@ public class Scanner
     }
 
     /**
-     * This function read the current character in the source code, returns it and advance the
-     * current cursor in the source code.
-     *
+     * Consume and return current character
      */
     protected char advance()
     {
@@ -366,13 +460,7 @@ public class Scanner
     }
 
     /**
-     * This function will check to see if the next character in the source code of the user match
-     * a specific character, if it does, we are going to advance the current position cursor and
-     * return returns but if it does not we are simply going to returns.
-     *
-     * @param ch represent the character we want to check the equality with
-     * @return returns whether the ch parameter value match or not
-     *
+     * Check if next character matches expected, and consume if so
      */
     protected boolean match(char ch)
     {
@@ -384,10 +472,7 @@ public class Scanner
     }
 
     /**
-     * This helper function check to see if we are in present of a number digit.
-     *
-     * @param ch represent the character to check if it is a number or not.
-     *
+     * Check if character is a digit
      */
     protected boolean isDigit(char ch)
     {
@@ -395,11 +480,7 @@ public class Scanner
     }
 
     /**
-     * This helper function check to see if the character is an alpha character or not.
-     * An identifier start whether with a lowercase letter or an uppercase letter.
-     *
-     * @param ch represent the character to check if it is an alpha character.
-     *
+     * Check if character is alphabetic or underscore
      */
     protected boolean isAlpha(char ch)
     {
@@ -407,10 +488,7 @@ public class Scanner
     }
 
     /**
-     * Helper function to check whether a character is a digit or an identifier.
-     *
-     * @param ch represent the character to check if it is a character.
-     *
+     * Check if character is alphanumeric
      */
     protected boolean isAlphaNumeric(char ch)
     {
