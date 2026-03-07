@@ -126,8 +126,15 @@ public class Main
     {
         Scanner scanner = new Scanner(script);
         List<Token> tokens = scanner.scanTokens();
+        tokens.stream()
+                .filter(token -> token.lexeme().equals("quit"))
+                .findFirst()
+                .ifPresentOrElse(
+                        token -> System.exit(0),
+                        () -> tokens.forEach(System.out::println)
+                );
 
-        Parser parser = new Parser(tokens);
+        /*Parser parser = new Parser(tokens);
         List<Statement> statements = parser.parse();
 
         if (!hadError)
@@ -151,7 +158,7 @@ public class Main
         if (!hadError)
         {
             interpreter.interpret(statements);
-        }
+        }*/
     }
 
     /**

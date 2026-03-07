@@ -52,7 +52,7 @@ public enum TokenType
     // Control flow keywords
     IF, THEN, ELSE, ELSEIF, ENDIF,
     FOR, TO, STEP, ENDFOR,
-    WHILE, DO, ENDWHILE,
+    WHILE, DO, ENDWHILE, DO_WHILE,
     REPEAT, UNTIL,
 
     // Logical operators
