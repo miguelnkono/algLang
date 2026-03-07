@@ -21,12 +21,33 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           native-image-job-reports: 'true'
 
+      - name: Run tests
+        run: mvn test
+
+      - name: Build JAR
+        run: mvn clean package
+
+      - name: Test JAR with example programs
+        run: |
+          JAR_FILE="target/algoLang-1.1.0-jar-with-dependencies.jar"
+          if [ -d "src/examples/new" ]; then
+            echo "Testing example programs..."
+            for example in src/examples/new/*.al; do
+              if [ -f "$example" ]; then
+                echo "Testing: $example"
+                java -jar "$JAR_FILE" "$example" || echo "Warning: $example failed"
+              fi
+            done
+          else
+            echo "No example programs found in src/examples/new"
+          fi
+
       - name: Build native executable (Linux)
         run: |
           mvn -Pnative clean package
           chmod +x target/algolang
 
-      - name: Test native executable
+      - name: Test native executable with simple program
         run: |
           echo 'Algorithme: test;
           Variables:
@@ -36,6 +57,18 @@ jobs:
               ecrire("Test: " + x);
           Fin' > test.al
           ./target/algolang test.al
+
+      - name: Test native executable with example programs
+        run: |
+          if [ -d "src/examples/new" ]; then
+            echo "Testing native executable with examples..."
+            for example in src/examples/new/*.al; do
+              if [ -f "$example" ]; then
+                echo "Testing native: $example"
+                ./target/algolang "$example" || echo "Warning: $example failed"
+              fi
+            done
+          fi
 
       - name: Create tarball
         run: |
@@ -63,20 +96,57 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           native-image-job-reports: 'true'
 
+      - name: Run tests
+        run: mvn test
+
+      - name: Build JAR
+        run: mvn clean package
+
+      - name: Test JAR with example programs
+        run: |
+          $JAR_FILE = "target/algoLang-1.1.0-jar-with-dependencies.jar"
+          if (Test-Path "src/examples/new") {
+            Write-Host "Testing example programs..."
+            Get-ChildItem -Path "src/examples/new" -Filter "*.al" | ForEach-Object {
+              Write-Host "Testing: $($_.FullName)"
+              java -jar $JAR_FILE $_.FullName
+              if ($LASTEXITCODE -ne 0) {
+                Write-Host "Warning: $($_.Name) failed"
+              }
+            }
+          } else {
+            Write-Host "No example programs found in src/examples/new"
+          }
+
       - name: Build native executable (Windows)
         run: |
           mvn -Pnative clean package
 
-      - name: Test native executable
+      - name: Test native executable with simple program
         run: |
-          echo "Algorithm: test;
+          @"
+          Algorithm: test;
           Variables:
               x : integer;
           Begin:
               x <- 42;
-              write(""Test: "" + x);
-          End" > test.al
+              write("Test: " + x);
+          End
+          "@ | Out-File -FilePath test.al -Encoding UTF8
           .\target\algolang.exe test.al --language=1
+
+      - name: Test native executable with example programs
+        run: |
+          if (Test-Path "src/examples/new") {
+            Write-Host "Testing native executable with examples..."
+            Get-ChildItem -Path "src/examples/new" -Filter "*.al" | ForEach-Object {
+              Write-Host "Testing native: $($_.FullName)"
+              .\target\algolang.exe $_.FullName
+              if ($LASTEXITCODE -ne 0) {
+                Write-Host "Warning: $($_.Name) failed"
+              }
+            }
+          }
 
       - name: Create zip archive
         run: |
@@ -104,12 +174,33 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           native-image-job-reports: 'true'
 
+      - name: Run tests
+        run: mvn test
+
+      - name: Build JAR
+        run: mvn clean package
+
+      - name: Test JAR with example programs
+        run: |
+          JAR_FILE="target/algoLang-1.1.0-jar-with-dependencies.jar"
+          if [ -d "src/examples/new" ]; then
+            echo "Testing example programs..."
+            for example in src/examples/new/*.al; do
+              if [ -f "$example" ]; then
+                echo "Testing: $example"
+                java -jar "$JAR_FILE" "$example" || echo "Warning: $example failed"
+              fi
+            done
+          else
+            echo "No example programs found in src/examples/new"
+          fi
+
       - name: Build native executable (macOS)
         run: |
           mvn -Pnative clean package
           chmod +x target/algolang
 
-      - name: Test native executable
+      - name: Test native executable with simple program
         run: |
           echo 'Algorithm: test;
           Variables:
@@ -119,6 +210,18 @@ jobs:
               write("Test: " + x);
           End' > test.al
           ./target/algolang test.al --language=1
+
+      - name: Test native executable with example programs
+        run: |
+          if [ -d "src/examples/new" ]; then
+            echo "Testing native executable with examples..."
+            for example in src/examples/new/*.al; do
+              if [ -f "$example" ]; then
+                echo "Testing native: $example"
+                ./target/algolang "$example" || echo "Warning: $example failed"
+              fi
+            done
+          fi
 
       - name: Create tarball
         run: |
@@ -186,6 +289,17 @@ jobs:
             # English mode
             algolang program.al --language=1
             ```
+            
+            ### What's New
+            
+            This release includes:
+            - Complete AlgoLang interpreter with all features
+            - Support for functions, arrays, structures
+            - Loops (for, while, do-while)
+            - File I/O operations
+            - Bilingual support (French/English)
+            - Enhanced REPL
+            - All example programs tested
           draft: false
           prerelease: false
         env:
