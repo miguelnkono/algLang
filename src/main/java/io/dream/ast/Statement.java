@@ -1,8 +1,11 @@
 package io.dream.ast;
 
+import java.util.HashMap;
 import java.util.List;
 import io.dream.types.Type;
 import io.dream.types.Value;
+
+import java.util.Map;
 import java.util.Objects;
 import io.dream.scanner.Token;
 
@@ -29,6 +32,9 @@ public abstract class Statement
 		R visitReturnStatement(Return statement);
 		R visitStructDeclarationStatement(StructDeclaration statement);
 		R visitMethodCallStatement(MethodCall statement);
+		R visitArrayAssignmentStatement(ArrayAssignment statement);
+		R visitFieldAssignmentStatement(FieldAssignment statement);
+		R visitNestedFieldArrayAssignmentStatement(NestedFieldArrayAssignment statement);
 	}
 
 	// ========================================================================
@@ -228,6 +234,78 @@ public abstract class Statement
 			return Objects.hash(name, value);
 		}
 	}
+	/**
+	 * Array assignment: arr[index] <- value
+	 */
+	public static class ArrayAssignment extends Statement
+	{
+		public final Token arrayName;
+		public final Expression index;
+		public final Expression value;
+
+		public ArrayAssignment(Token arrayName, Expression index, Expression value)
+		{
+			this.arrayName = arrayName;
+			this.index = index;
+			this.value = value;
+		}
+
+		@Override
+		public <R> R accept(Visitor<R> visitor)
+		{
+			return visitor.visitArrayAssignmentStatement(this);
+		}
+	}
+
+	/**
+	 * Field assignment: object.field <- value
+	 */
+	public static class FieldAssignment extends Statement
+	{
+		public final Token objectName;
+		public final Token fieldName;
+		public final Expression value;
+
+		public FieldAssignment(Token objectName, Token fieldName, Expression value)
+		{
+			this.objectName = objectName;
+			this.fieldName = fieldName;
+			this.value = value;
+		}
+
+		@Override
+		public <R> R accept(Visitor<R> visitor)
+		{
+			return visitor.visitFieldAssignmentStatement(this);
+		}
+	}
+
+	/**
+	 * Nested field+array assignment: object.field[index] <- value
+	 * Example: etudiant.notes[1] <- 15.5;
+	 */
+	public static class NestedFieldArrayAssignment extends Statement
+	{
+		public final Token objectName;
+		public final Token fieldName;
+		public final Expression index;
+		public final Expression value;
+
+		public NestedFieldArrayAssignment(Token objectName, Token fieldName,
+										  Expression index, Expression value)
+		{
+			this.objectName = objectName;
+			this.fieldName = fieldName;
+			this.index = index;
+			this.value = value;
+		}
+
+		@Override
+		public <R> R accept(Visitor<R> visitor)
+		{
+			return visitor.visitNestedFieldArrayAssignmentStatement(this);
+		}
+	}
 
 	// ========================================================================
 	// IF STATEMENT (e.g., si condition alors ... finsi)
@@ -384,12 +462,13 @@ public abstract class Statement
 	public static class FunctionDeclaration extends Statement
 	{
 		public FunctionDeclaration(Token name, List<Parameter> parameters, Type returnType,
-								   List<Statement> body)
+								   List<Statement> body, Map<String, Type> localVariables)
 		{
 			this.name = name;
 			this.parameters = parameters;
 			this.returnType = returnType;
 			this.body = body;
+			this.localVariables = localVariables != null ? localVariables : new HashMap<>();
 		}
 
 		@Override
@@ -401,6 +480,7 @@ public abstract class Statement
 		public final List<Parameter> parameters;
 		public final Type returnType;
 		public final List<Statement> body;
+		public final Map<String, Type> localVariables;
 
 		@Override
 		public boolean equals(Object o) {
@@ -425,11 +505,12 @@ public abstract class Statement
 	// ========================================================================
 	public static class MethodDeclaration extends Statement
 	{
-		public MethodDeclaration(Token name, List<Parameter> parameters, List<Statement> body)
+		public MethodDeclaration(Token name, List<Parameter> parameters, List<Statement> body, Map<String, Type> localVariables)
 		{
 			this.name = name;
 			this.parameters = parameters;
 			this.body = body;
+			this.localVariables = localVariables != null ? localVariables : new HashMap<>();
 		}
 
 		@Override
@@ -440,6 +521,7 @@ public abstract class Statement
 		public final Token name;
 		public final List<Parameter> parameters;
 		public final List<Statement> body;
+		public final Map<String, Type> localVariables;
 
 		@Override
 		public boolean equals(Object o) {

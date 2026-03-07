@@ -331,6 +331,109 @@ public class Interpreter implements Expression.Visitor<Object>, Statement.Visito
     }
 
     @Override
+    public Void visitNestedFieldArrayAssignmentStatement(Statement.NestedFieldArrayAssignment statement)
+    {
+        // Get structure value
+        Value structVal = environment.get_value(statement.objectName.lexeme());
+
+        if (!(structVal instanceof StructValue))
+        {
+            throw new RuntimeError(statement.objectName,
+                    Messages.cannotAccessFieldOfNonStruct());
+        }
+
+        StructValue struct = (StructValue) structVal;
+
+        // Get field value (should be an array)
+        Value fieldVal = struct.getField(statement.fieldName.lexeme());
+
+        if (!(fieldVal instanceof ArrayValue))
+        {
+            throw new RuntimeError(statement.fieldName,
+                    "Field '" + statement.fieldName.lexeme() + "' is not an array");
+        }
+
+        ArrayValue array = (ArrayValue) fieldVal;
+
+        // Evaluate index
+        Object indexObj = evaluate(statement.index);
+        if (!(indexObj instanceof Integer))
+        {
+            throw new RuntimeError(null, "Array index must be an integer");
+        }
+
+        int index = (Integer) indexObj;
+
+        // Evaluate value
+        Object value = evaluate(statement.value);
+        Type valueType = statement.value.getType();
+        Value wrappedValue = wrapValue(value, valueType);
+
+        // Set array element within the structure's field
+        array.set(index, wrappedValue);
+
+        return null;
+    }
+
+    @Override
+    public Void visitArrayAssignmentStatement(Statement.ArrayAssignment statement)
+    {
+        // Get array value
+        Value arrayVal = environment.get_value(statement.arrayName.lexeme());
+
+        if (!(arrayVal instanceof ArrayValue))
+        {
+            throw new RuntimeError(statement.arrayName, Messages.cannotIndexNonArray());
+        }
+
+        ArrayValue array = (ArrayValue) arrayVal;
+
+        // Evaluate index
+        Object indexObj = evaluate(statement.index);
+        if (!(indexObj instanceof Integer))
+        {
+            throw new RuntimeError(null, "Array index must be an integer");
+        }
+
+        int index = (Integer) indexObj;
+
+        // Evaluate value
+        Object value = evaluate(statement.value);
+        Type valueType = statement.value.getType();
+        Value wrappedValue = wrapValue(value, valueType);
+
+        // Set array element
+        array.set(index, wrappedValue);
+
+        return null;
+    }
+
+    @Override
+    public Void visitFieldAssignmentStatement(Statement.FieldAssignment statement)
+    {
+        // Get structure value
+        Value structVal = environment.get_value(statement.objectName.lexeme());
+
+        if (!(structVal instanceof StructValue))
+        {
+            throw new RuntimeError(statement.objectName,
+                    Messages.cannotAccessFieldOfNonStruct());
+        }
+
+        StructValue struct = (StructValue) structVal;
+
+        // Evaluate value
+        Object value = evaluate(statement.value);
+        Type valueType = statement.value.getType();
+        Value wrappedValue = wrapValue(value, valueType);
+
+        // Set field
+        struct.setField(statement.fieldName.lexeme(), wrappedValue);
+
+        return null;
+    }
+
+    @Override
     public Void visitForStatement(Statement.For statement)
     {
         String varName = statement.variable.lexeme();
@@ -492,7 +595,7 @@ public class Interpreter implements Expression.Visitor<Object>, Statement.Visito
                 }
                 else
                 {
-                    double divisor = (double) right;
+                    int divisor = (int) right;
                     if (divisor == 0.0)
                     {
                         throw new RuntimeError(expression.operator, Messages.divisionByZero());
@@ -732,10 +835,6 @@ public class Interpreter implements Expression.Visitor<Object>, Statement.Visito
         return arrayValue;
     }
 
-    // ========================================================================
-    // HELPER METHODS
-    // ========================================================================
-
     /**
      * Execute a function and return its result
      */
@@ -754,6 +853,12 @@ public class Interpreter implements Expression.Visitor<Object>, Statement.Visito
                 Object argValue = arguments.get(i);
                 Value wrappedValue = wrapValue(argValue, param.type);
                 environment.define(param.name.lexeme(), param.type, wrappedValue);
+            }
+
+            // initialize local variable to null;
+            for (Map.Entry<String, Type> localVar : function.localVariables.entrySet())
+            {
+                environment.define(localVar.getKey(), localVar.getValue(), null);
             }
 
             // Execute function body
@@ -797,6 +902,12 @@ public class Interpreter implements Expression.Visitor<Object>, Statement.Visito
                 Object argValue = arguments.get(i);
                 Value wrappedValue = wrapValue(argValue, param.type);
                 environment.define(param.name.lexeme(), param.type, wrappedValue);
+            }
+
+            // Initialize local variables to null;
+            for (Map.Entry<String, Type> localVar : method.localVariables.entrySet())
+            {
+                environment.define(localVar.getKey(), localVar.getValue(), null);
             }
 
             // Execute method body

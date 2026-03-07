@@ -258,10 +258,17 @@ public class Parser
         consume(END_FUNCTION, Messages.expectEndFunctionBlock());
         consume(SEMICOLON, Messages.expectSemicolon("function declaration"));
 
+        // Capture local variables (excluding parameters)
+        Map<String, Type> localVars = new HashMap<>(currentScope);
+        for (Statement.Parameter param : parameters)
+        {
+            localVars.remove(param.name.lexeme());
+        }
+
         // Restore previous scope
         currentScope = previousScope;
 
-        return new Statement.FunctionDeclaration(name, parameters, returnType, body);
+        return new Statement.FunctionDeclaration(name, parameters, returnType, body, localVars);
     }
 
     /**
@@ -325,10 +332,17 @@ public class Parser
         consume(END_METHOD, Messages.expectEndMethodBlock());
         consume(SEMICOLON, Messages.expectSemicolon("method declaration"));
 
+        // Capture local variables (excluding parameters)
+        Map<String, Type> localVars = new HashMap<>(currentScope);
+        for (Statement.Parameter param : parameters)
+        {
+            localVars.remove(param.name.lexeme());
+        }
+
         // Restore previous scope
         currentScope = previousScope;
 
-        return new Statement.MethodDeclaration(name, parameters, body);
+        return new Statement.MethodDeclaration(name, parameters, body, localVars);
     }
 
     /**
@@ -595,21 +609,67 @@ public class Parser
 
     /**
      * assignment_stmt -> lvalue "<-" expression ";"
-     * where lvalue can be: identifier, identifier[index], identifier.field
+     * where lvalue can be:
+     *   - identifier
+     *   - identifier[index]
+     *   - identifier.field
+     *   - identifier.field[index]  (NESTED)
      */
     private Statement assignmentStatement()
     {
         Token name = consume(IDENTIFIER, Messages.expectVariableName());
 
-        // Check for array or field access on left side
-        // For now, we'll keep it simple and only support direct assignment
-        // TODO: Support arr[i] <- value and obj.field <- value
+        // Check for field access first: obj.field
+        if (check(DOT))
+        {
+            consume(DOT, null);
+            Token field = consume(IDENTIFIER, Messages.expectFieldName());
 
-        consume(ASSIGN, Messages.expectAssignOperator());
-        Expression value = expression();
-        consume(SEMICOLON, Messages.expectSemicolon("assignment"));
+            // Check for nested array access: obj.field[index]
+            if (check(LEFT_BRACKET))
+            {
+                consume(LEFT_BRACKET, null);
+                Expression index = expression();
+                consume(RIGHT_BRACKET, Messages.expectRightBracket("index"));
+                consume(ASSIGN, Messages.expectAssignOperator());
+                Expression value = expression();
+                consume(SEMICOLON, Messages.expectSemicolon("assignment"));
 
-        return new Statement.Assignment(name, value);
+                // This is a nested field+array assignment
+                // We need a new statement type for this
+                return new Statement.NestedFieldArrayAssignment(name, field, index, value);
+            }
+            else
+            {
+                // Simple field assignment: obj.field <- value
+                consume(ASSIGN, Messages.expectAssignOperator());
+                Expression value = expression();
+                consume(SEMICOLON, Messages.expectSemicolon("assignment"));
+
+                return new Statement.FieldAssignment(name, field, value);
+            }
+        }
+        // Check for array assignment: arr[index] <- value
+        else if (check(LEFT_BRACKET))
+        {
+            consume(LEFT_BRACKET, null);
+            Expression index = expression();
+            consume(RIGHT_BRACKET, Messages.expectRightBracket("index"));
+            consume(ASSIGN, Messages.expectAssignOperator());
+            Expression value = expression();
+            consume(SEMICOLON, Messages.expectSemicolon("assignment"));
+
+            return new Statement.ArrayAssignment(name, index, value);
+        }
+        // Simple variable assignment: x <- value
+        else
+        {
+            consume(ASSIGN, Messages.expectAssignOperator());
+            Expression value = expression();
+            consume(SEMICOLON, Messages.expectSemicolon("assignment"));
+
+            return new Statement.Assignment(name, value);
+        }
     }
 
     /**

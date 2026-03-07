@@ -2,7 +2,6 @@ package io.dream.scanner;
 
 /**
  * Complete Token Types for AlgoLang
- * Supports all language features including loops, functions, methods, structures, arrays
  */
 public enum TokenType
 {
@@ -52,7 +51,7 @@ public enum TokenType
     // Control flow keywords
     IF, THEN, ELSE, ELSEIF, ENDIF,
     FOR, TO, STEP, ENDFOR,
-    WHILE, DO, ENDWHILE, DO_WHILE,
+    WHILE, DO, ENDWHILE,
     REPEAT, UNTIL,
 
     // Logical operators

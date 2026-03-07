@@ -352,6 +352,177 @@ public class Checker implements Expression.Visitor<Type>, Statement.Visitor<Void
     }
 
     @Override
+    public Void visitArrayAssignmentStatement(Statement.ArrayAssignment statement)
+    {
+        // Get array type
+        Type arrayType = currentScope.get(statement.arrayName.lexeme());
+        if (arrayType == null)
+        {
+            throw new TypeException(
+                    Messages.variableNotDeclared(statement.arrayName.lexeme()),
+                    statement.arrayName
+            );
+        }
+
+        // Must be an array
+        if (!(arrayType instanceof ArrayType))
+        {
+            throw new TypeException(Messages.cannotIndexNonArray());
+        }
+
+        ArrayType arrType = (ArrayType) arrayType;
+
+        // Type check index
+        Type indexType = statement.index.accept(this);
+        statement.index.setType(indexType);
+
+        if (!indexType.equals(TypeFactory.INTEGER))
+        {
+            throw new TypeException(
+                    Messages.expectedTypeButGot("entier", indexType.toString())
+            );
+        }
+
+        // Type check value
+        Type valueType = statement.value.accept(this);
+        statement.value.setType(valueType);
+
+        // Value must match element type
+        if (!valueType.equals(arrType.getElementType()))
+        {
+            throw new TypeException(
+                    Messages.typeIncompatibility(
+                            arrType.getElementType().toString(),
+                            valueType.toString()
+                    )
+            );
+        }
+
+        return null;
+    }
+
+    @Override
+    public Void visitNestedFieldArrayAssignmentStatement(Statement.NestedFieldArrayAssignment statement)
+    {
+        // Get structure type
+        Type structType = currentScope.get(statement.objectName.lexeme());
+        if (structType == null)
+        {
+            throw new TypeException(
+                    Messages.variableNotDeclared(statement.objectName.lexeme()),
+                    statement.objectName
+            );
+        }
+
+        // Must be a structure
+        if (!(structType instanceof StructType))
+        {
+            throw new TypeException(Messages.cannotAccessFieldOfNonStruct());
+        }
+
+        StructType struct = (StructType) structType;
+
+        // Check field exists
+        String fieldName = statement.fieldName.lexeme();
+        if (!struct.hasField(fieldName))
+        {
+            throw new TypeException(
+                    Messages.fieldNotFound(struct.getName(), fieldName),
+                    statement.fieldName
+            );
+        }
+
+        // Get field type - must be an array
+        Type fieldType = struct.getFieldType(fieldName);
+        if (!(fieldType instanceof ArrayType))
+        {
+            throw new TypeException(
+                    "Field '" + fieldName + "' is not an array"
+            );
+        }
+
+        ArrayType arrayType = (ArrayType) fieldType;
+
+        // Type check index
+        Type indexType = statement.index.accept(this);
+        statement.index.setType(indexType);
+
+        if (!indexType.equals(TypeFactory.INTEGER))
+        {
+            throw new TypeException(
+                    Messages.expectedTypeButGot("entier", indexType.toString())
+            );
+        }
+
+        // Type check value
+        Type valueType = statement.value.accept(this);
+        statement.value.setType(valueType);
+
+        // Value must match array element type
+        if (!valueType.equals(arrayType.getElementType()))
+        {
+            throw new TypeException(
+                    Messages.typeIncompatibility(
+                            arrayType.getElementType().toString(),
+                            valueType.toString()
+                    )
+            );
+        }
+
+        return null;
+    }
+
+    @Override
+    public Void visitFieldAssignmentStatement(Statement.FieldAssignment statement)
+    {
+        // Get structure type
+        Type structType = currentScope.get(statement.objectName.lexeme());
+        if (structType == null)
+        {
+            throw new TypeException(
+                    Messages.variableNotDeclared(statement.objectName.lexeme()),
+                    statement.objectName
+            );
+        }
+
+        // Must be a structure
+        if (!(structType instanceof StructType))
+        {
+            throw new TypeException(Messages.cannotAccessFieldOfNonStruct());
+        }
+
+        StructType struct = (StructType) structType;
+
+        // Check field exists
+        String fieldName = statement.fieldName.lexeme();
+        if (!struct.hasField(fieldName))
+        {
+            throw new TypeException(
+                    Messages.fieldNotFound(struct.getName(), fieldName),
+                    statement.fieldName
+            );
+        }
+
+        // Type check value
+        Type valueType = statement.value.accept(this);
+        statement.value.setType(valueType);
+
+        // Value must match field type
+        Type fieldType = struct.getFieldType(fieldName);
+        if (!valueType.equals(fieldType))
+        {
+            throw new TypeException(
+                    Messages.typeIncompatibility(
+                            fieldType.toString(),
+                            valueType.toString()
+                    )
+            );
+        }
+
+        return null;
+    }
+
+    @Override
     public Void visitFunctionDeclarationStatement(Statement.FunctionDeclaration statement)
     {
         // Create new scope for function
@@ -363,6 +534,8 @@ public class Checker implements Expression.Visitor<Type>, Statement.Visitor<Void
         {
             currentScope.put(param.name.lexeme(), param.type);
         }
+
+        currentScope.putAll(statement.localVariables);
 
         // Set function context
         boolean wasInFunction = inFunction;
@@ -396,6 +569,8 @@ public class Checker implements Expression.Visitor<Type>, Statement.Visitor<Void
         {
             currentScope.put(param.name.lexeme(), param.type);
         }
+
+        currentScope.putAll(statement.localVariables);
 
         // Type check method body
         for (Statement stmt : statement.body)

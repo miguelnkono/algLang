@@ -135,11 +135,21 @@ public class Main
             try
             {
                 // Create type checker with symbol table from parser
-                Checker typeChecker = new Checker(parser.getSymbolTable());
+                Checker typeChecker = new Checker(
+                        parser.getSymbolTable(),
+                        parser.getFunctionTable(),
+                        parser.getMethodTable(),
+                        parser.getStructTable()
+                );
                 typeChecker.check(statements);
 
                 // Create interpreter with symbol table
-                interpreter = new Interpreter(parser.getSymbolTable());
+                interpreter = new Interpreter(
+                        parser.getSymbolTable(),
+                        parser.getFunctionTable(),
+                        parser.getMethodTable(),
+                        parser.getStructTable()
+                );
             } catch (Exception e)
             {
                 System.err.println(Messages.typeError() + e.getMessage());

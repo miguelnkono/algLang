@@ -12,7 +12,7 @@ Variables:
     somme : reel;
     i : entier;
 Debut:
-    somme <- 0;
+    somme <- 0,0;
     pour i <- 1 jusqu_a 3 faire:
         somme <- somme + e.notes[i];
     finpour
@@ -39,9 +39,9 @@ Variables:
 Debut:
     etudiant.nom <- "Alice Dupont";
     etudiant.age <- 20;
-    etudiant.notes[1] <- 15.5;
-    etudiant.notes[2] <- 18.0;
-    etudiant.notes[3] <- 16.5;
+    etudiant.notes[1] <- 15,5;
+    etudiant.notes[2] <- 18,0;
+    etudiant.notes[3] <- 16,5;
 
     afficherEtudiant(etudiant);
 Fin
