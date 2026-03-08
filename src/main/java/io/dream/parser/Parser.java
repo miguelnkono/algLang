@@ -554,6 +554,12 @@ public class Parser
                     {
                         return methodCallStatement();
                     }
+                    else
+                    {
+                        // Treat as expression statement (function call)
+                        // This handles built-in functions like writeLine, close, etc.
+                        return new Statement.ExpressionStmt(expression());
+                    }
                 }
 
                 // Assignment: identifier <- ...
@@ -589,10 +595,47 @@ public class Parser
     {
         consume(LEFT_PAREN, Messages.expectLeftParen("read"));
         Token variable = consume(IDENTIFIER, Messages.expectVariableName());
+
+        // Check for field access: var.field or array access: var[index]
+        Token field = null;
+
+        if (match(DOT))
+        {
+            field = consume(IDENTIFIER, Messages.expectFieldName());
+        }
+
+        // Check for array access: [index] (can follow field access!)
+        Expression index = null;
+        if (match(LEFT_BRACKET))
+        {
+            index = expression();
+            consume(RIGHT_BRACKET, Messages.expectRightBracket("index"));
+        }
+
         consume(RIGHT_PAREN, Messages.expectRightParen("variable name"));
         consume(SEMICOLON, Messages.expectSemicolon("read statement"));
 
-        return new Statement.Read(variable);
+        // Return appropriate read statement type based on what we found
+        if (field != null && index != null)
+        {
+            // Nested: obj.field[index]
+            return new Statement.NestedFieldArrayRead(variable, field, index);
+        }
+        else if (field != null)
+        {
+            // Simple field: obj.field
+            return new Statement.FieldRead(variable, field);
+        }
+        else if (index != null)
+        {
+            // Simple array: arr[index]
+            return new Statement.ArrayRead(variable, index);
+        }
+        else
+        {
+            // Simple variable: var
+            return new Statement.Read(variable);
+        }
     }
 
     /**

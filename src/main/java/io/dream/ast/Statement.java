@@ -35,6 +35,33 @@ public abstract class Statement
 		R visitArrayAssignmentStatement(ArrayAssignment statement);
 		R visitFieldAssignmentStatement(FieldAssignment statement);
 		R visitNestedFieldArrayAssignmentStatement(NestedFieldArrayAssignment statement);
+		R visitFieldReadStatement(FieldRead statement);
+		R visitArrayReadStatement(ArrayRead statement);
+		R visitNestedFieldArrayReadStatement(NestedFieldArrayRead statement);
+	}
+
+	/**
+	 * Read into nested field+array: lire(obj.field[index])
+	 * Example: lire(etudiant.notes[i])
+	 */
+	public static class NestedFieldArrayRead extends Statement
+	{
+		public final Token objectName;
+		public final Token fieldName;
+		public final Expression index;
+
+		public NestedFieldArrayRead(Token objectName, Token fieldName, Expression index)
+		{
+			this.objectName = objectName;
+			this.fieldName = fieldName;
+			this.index = index;
+		}
+
+		@Override
+		public <R> R accept(Visitor<R> visitor)
+		{
+			return visitor.visitNestedFieldArrayReadStatement(this);
+		}
 	}
 
 	// ========================================================================
@@ -499,10 +526,48 @@ public abstract class Statement
 		}
 	}
 
-	// ========================================================================
-	// METHOD DECLARATION
-	// (e.g., Methode: afficher(x: entier): ... FinMethode;)
-	// ========================================================================
+	/**
+	 * Read into structure field: lire(obj.field)
+	 */
+	public static class FieldRead extends Statement
+	{
+		public final Token objectName;
+		public final Token fieldName;
+
+		public FieldRead(Token objectName, Token fieldName)
+		{
+			this.objectName = objectName;
+			this.fieldName = fieldName;
+		}
+
+		@Override
+		public <R> R accept(Visitor<R> visitor)
+		{
+			return visitor.visitFieldReadStatement(this);
+		}
+	}
+
+	/**
+	 * Read into array element: lire(arr[index])
+	 */
+	public static class ArrayRead extends Statement
+	{
+		public final Token arrayName;
+		public final Expression index;
+
+		public ArrayRead(Token arrayName, Expression index)
+		{
+			this.arrayName = arrayName;
+			this.index = index;
+		}
+
+		@Override
+		public <R> R accept(Visitor<R> visitor)
+		{
+			return visitor.visitArrayReadStatement(this);
+		}
+	}
+
 	public static class MethodDeclaration extends Statement
 	{
 		public MethodDeclaration(Token name, List<Parameter> parameters, List<Statement> body, Map<String, Type> localVariables)

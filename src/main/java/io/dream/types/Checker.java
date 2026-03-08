@@ -660,6 +660,118 @@ public class Checker implements Expression.Visitor<Type>, Statement.Visitor<Void
 
         return null;
     }
+    @Override
+    public Void visitFieldReadStatement(Statement.FieldRead statement)
+    {
+        // Type checking for field read
+        Type structType = currentScope.get(statement.objectName.lexeme());
+        if (structType == null)
+        {
+            throw new TypeException(
+                    Messages.variableNotDeclared(statement.objectName.lexeme()),
+                    statement.objectName
+            );
+        }
+
+        if (!(structType instanceof StructType))
+        {
+            throw new TypeException(Messages.cannotAccessFieldOfNonStruct());
+        }
+
+        StructType struct = (StructType) structType;
+        if (!struct.hasField(statement.fieldName.lexeme()))
+        {
+            throw new TypeException(
+                    Messages.fieldNotFound(struct.getName(), statement.fieldName.lexeme()),
+                    statement.fieldName
+            );
+        }
+
+        return null;
+    }
+
+    @Override
+    public Void visitArrayReadStatement(Statement.ArrayRead statement)
+    {
+        Type arrayType = currentScope.get(statement.arrayName.lexeme());
+        if (arrayType == null)
+        {
+            throw new TypeException(
+                    Messages.variableNotDeclared(statement.arrayName.lexeme()),
+                    statement.arrayName
+            );
+        }
+
+        if (!(arrayType instanceof ArrayType))
+        {
+            throw new TypeException(Messages.cannotIndexNonArray());
+        }
+
+        Type indexType = statement.index.accept(this);
+        statement.index.setType(indexType);
+
+        if (!indexType.equals(TypeFactory.INTEGER))
+        {
+            throw new TypeException(
+                    Messages.expectedTypeButGot("entier", indexType.toString())
+            );
+        }
+
+        return null;
+    }
+
+    @Override
+    public Void visitNestedFieldArrayReadStatement(Statement.NestedFieldArrayRead statement)
+    {
+        // Get structure type
+        Type structType = currentScope.get(statement.objectName.lexeme());
+        if (structType == null)
+        {
+            throw new TypeException(
+                    Messages.variableNotDeclared(statement.objectName.lexeme()),
+                    statement.objectName
+            );
+        }
+
+        if (!(structType instanceof StructType))
+        {
+            throw new TypeException(Messages.cannotAccessFieldOfNonStruct());
+        }
+
+        StructType struct = (StructType) structType;
+
+        // Check field exists
+        String fieldName = statement.fieldName.lexeme();
+        if (!struct.hasField(fieldName))
+        {
+            throw new TypeException(
+                    Messages.fieldNotFound(struct.getName(), fieldName),
+                    statement.fieldName
+            );
+        }
+
+        // Get field type - must be an array
+        Type fieldType = struct.getFieldType(fieldName);
+        if (!(fieldType instanceof ArrayType))
+        {
+            throw new TypeException(
+                    "Field '" + fieldName + "' is not an array"
+            );
+        }
+
+        // Type check index
+        Type indexType = statement.index.accept(this);
+        statement.index.setType(indexType);
+
+        if (!indexType.equals(TypeFactory.INTEGER))
+        {
+            throw new TypeException(
+                    Messages.expectedTypeButGot("entier", indexType.toString())
+            );
+        }
+
+        return null;
+    }
 
     @Override
     public Type visitBinaryExpression(Expression.Binary expression)

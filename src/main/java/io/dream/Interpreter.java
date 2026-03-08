@@ -89,14 +89,12 @@ public class Interpreter implements Expression.Visitor<Object>, Statement.Visito
             // First pass: Register functions and methods
             for (Statement statement : statements)
             {
-                if (statement instanceof Statement.FunctionDeclaration)
+                if (statement instanceof Statement.FunctionDeclaration func)
                 {
-                    Statement.FunctionDeclaration func = (Statement.FunctionDeclaration) statement;
                     functions.put(func.name.lexeme(), func);
                 }
-                else if (statement instanceof Statement.MethodDeclaration)
+                else if (statement instanceof Statement.MethodDeclaration method)
                 {
-                    Statement.MethodDeclaration method = (Statement.MethodDeclaration) statement;
                     methods.put(method.name.lexeme(), method);
                 }
             }
@@ -138,9 +136,56 @@ public class Interpreter implements Expression.Visitor<Object>, Statement.Visito
         return expression.accept(this);
     }
 
-    // ========================================================================
-    // STATEMENT VISITORS
-    // ========================================================================
+    @Override
+    public Void visitNestedFieldArrayReadStatement(Statement.NestedFieldArrayRead statement)
+    {
+        // Get structure value
+        Value structVal = environment.get_value(statement.objectName.lexeme());
+
+        if (!(structVal instanceof StructValue))
+        {
+            throw new RuntimeError(statement.objectName,
+                    Messages.cannotAccessFieldOfNonStruct());
+        }
+
+        StructValue struct = (StructValue) structVal;
+
+        // Get field value (should be an array)
+        Value fieldVal = struct.getField(statement.fieldName.lexeme());
+
+        if (!(fieldVal instanceof ArrayValue))
+        {
+            throw new RuntimeError(statement.fieldName,
+                    "Field '" + statement.fieldName.lexeme() + "' is not an array");
+        }
+
+        ArrayValue array = (ArrayValue) fieldVal;
+
+        // Evaluate index
+        Object indexObj = evaluate(statement.index);
+        if (!(indexObj instanceof Integer))
+        {
+            throw new RuntimeError(null, "Array index must be an integer");
+        }
+
+        int index = (Integer) indexObj;
+
+        // Get element type
+        Type structType = environment.get_type(statement.objectName.lexeme());
+        StructType st = (StructType) structType;
+        Type fieldType = st.getFieldType(statement.fieldName.lexeme());
+        ArrayType arrayType = (ArrayType) fieldType;
+        Type elementType = arrayType.getElementType();
+
+        // Prompt and read value
+        System.out.print("> ");
+        Value value = readValueOfType(elementType);
+
+        // Set array element within the structure's field
+        array.set(index, value);
+
+        return null;
+    }
 
     @Override
     public Void visitExpressionStmtStatement(Statement.ExpressionStmt statement)
@@ -199,7 +244,7 @@ public class Interpreter implements Expression.Visitor<Object>, Statement.Visito
         else if (varType.equals(TypeFactory.CHAR))
         {
             String input = scanner.nextLine();
-            if (input.length() > 0)
+            if (!input.isEmpty())
             {
                 value = input.charAt(0);
             }
@@ -367,24 +412,20 @@ public class Interpreter implements Expression.Visitor<Object>, Statement.Visito
         // Get structure value
         Value structVal = environment.get_value(statement.objectName.lexeme());
 
-        if (!(structVal instanceof StructValue))
+        if (!(structVal instanceof StructValue struct))
         {
             throw new RuntimeError(statement.objectName,
                     Messages.cannotAccessFieldOfNonStruct());
         }
 
-        StructValue struct = (StructValue) structVal;
-
         // Get field value (should be an array)
         Value fieldVal = struct.getField(statement.fieldName.lexeme());
 
-        if (!(fieldVal instanceof ArrayValue))
+        if (!(fieldVal instanceof ArrayValue array))
         {
             throw new RuntimeError(statement.fieldName,
                     "Field '" + statement.fieldName.lexeme() + "' is not an array");
         }
-
-        ArrayValue array = (ArrayValue) fieldVal;
 
         // Evaluate index
         Object indexObj = evaluate(statement.index);
@@ -412,12 +453,10 @@ public class Interpreter implements Expression.Visitor<Object>, Statement.Visito
         // Get array value
         Value arrayVal = environment.get_value(statement.arrayName.lexeme());
 
-        if (!(arrayVal instanceof ArrayValue))
+        if (!(arrayVal instanceof ArrayValue array))
         {
             throw new RuntimeError(statement.arrayName, Messages.cannotIndexNonArray());
         }
-
-        ArrayValue array = (ArrayValue) arrayVal;
 
         // Evaluate index
         Object indexObj = evaluate(statement.index);
@@ -445,13 +484,11 @@ public class Interpreter implements Expression.Visitor<Object>, Statement.Visito
         // Get structure value
         Value structVal = environment.get_value(statement.objectName.lexeme());
 
-        if (!(structVal instanceof StructValue))
+        if (!(structVal instanceof StructValue struct))
         {
             throw new RuntimeError(statement.objectName,
                     Messages.cannotAccessFieldOfNonStruct());
         }
-
-        StructValue struct = (StructValue) structVal;
 
         // Evaluate value
         Object value = evaluate(statement.value);
@@ -730,9 +767,8 @@ public class Interpreter implements Expression.Visitor<Object>, Statement.Visito
     @Override
     public Object visitLiteralExpression(Expression.Literal expression)
     {
-        if (expression.value instanceof AtomicValue)
+        if (expression.value instanceof AtomicValue<?> atomicValue)
         {
-            AtomicValue<?> atomicValue = (AtomicValue<?>) expression.value;
             return atomicValue.getValue();
         }
         return expression.value;
@@ -757,7 +793,7 @@ public class Interpreter implements Expression.Visitor<Object>, Statement.Visito
         Object left = evaluate(expression.left);
 
         // Short-circuit evaluation
-        if (expression.operator.type() == io.dream.scanner.TokenType.OR)
+        if (expression.operator.type() == TokenType.OR)
         {
             if (isTruthy(left)) return true;
         }
@@ -800,12 +836,10 @@ public class Interpreter implements Expression.Visitor<Object>, Statement.Visito
         Object arrayObj = evaluate(expression.array);
 
         // Must be an ArrayValue
-        if (!(arrayObj instanceof ArrayValue))
+        if (!(arrayObj instanceof ArrayValue arrayValue))
         {
             throw new RuntimeError(null, Messages.cannotIndexNonArray());
         }
-
-        ArrayValue arrayValue = (ArrayValue) arrayObj;
 
         // Evaluate index
         Object indexObj = evaluate(expression.index);
@@ -835,12 +869,11 @@ public class Interpreter implements Expression.Visitor<Object>, Statement.Visito
         Object obj = evaluate(expression.object);
 
         // Must be a StructValue
-        if (!(obj instanceof StructValue))
+        if (!(obj instanceof StructValue structValue))
         {
             throw new RuntimeError(expression.field, Messages.cannotAccessFieldOfNonStruct());
         }
 
-        StructValue structValue = (StructValue) obj;
         String fieldName = expression.field.lexeme();
 
         // Get field value
@@ -873,6 +906,156 @@ public class Interpreter implements Expression.Visitor<Object>, Statement.Visito
 
         return arrayValue;
     }
+
+    @Override
+    public Void visitFieldReadStatement(Statement.FieldRead statement)
+    {
+        // Get structure value
+        Value structVal = environment.get_value(statement.objectName.lexeme());
+
+        if (!(structVal instanceof StructValue struct))
+        {
+            throw new RuntimeError(statement.objectName,
+                    Messages.cannotAccessFieldOfNonStruct());
+        }
+
+        // Get field type
+        Type structType = environment.get_type(statement.objectName.lexeme());
+        StructType st = (StructType) structType;
+        Type fieldType = st.getFieldType(statement.fieldName.lexeme());
+
+        // Prompt and read value
+        System.out.print("> ");
+        Value value = readValueOfType(fieldType);
+
+        // Set field
+        struct.setField(statement.fieldName.lexeme(), value);
+
+        return null;
+    }
+
+    @Override
+    public Void visitArrayReadStatement(Statement.ArrayRead statement)
+    {
+        // Get array value
+        Value arrayVal = environment.get_value(statement.arrayName.lexeme());
+
+        if (!(arrayVal instanceof ArrayValue array))
+        {
+            throw new RuntimeError(statement.arrayName, Messages.cannotIndexNonArray());
+        }
+
+        // Evaluate index
+        Object indexObj = evaluate(statement.index);
+        if (!(indexObj instanceof Integer))
+        {
+            throw new RuntimeError(null, "Array index must be an integer");
+        }
+
+        int index = (Integer) indexObj;
+
+        // Get element type
+        Type arrayType = environment.get_type(statement.arrayName.lexeme());
+        ArrayType at = (ArrayType) arrayType;
+        Type elementType = at.getElementType();
+
+        // Prompt and read value
+        System.out.print("> ");
+        Value value = readValueOfType(elementType);
+
+        // Set array element
+        array.set(index, value);
+
+        return null;
+    }
+
+    // Helper method to extract reading logic
+    private Value readValueOfType(Type type)
+    {
+        Value value = null;
+
+        Scanner scanner = new Scanner(System.in);
+        if (type.equals(TypeFactory.INTEGER))
+        {
+            try
+            {
+                int inputValue = scanner.nextInt();
+                scanner.nextLine(); // Consume newline
+                value = new AtomicValue<>(inputValue, AtomicTypes.INTEGER);
+            }
+            catch (Exception e)
+            {
+                throw new RuntimeError(null, "Expected integer input");
+            }
+        }
+        else if (type.equals(TypeFactory.FLOATING))
+        {
+            try
+            {
+                String input = scanner.nextLine().trim();
+
+                // Handle both comma and dot as decimal separator
+                if (Config.getLanguage())
+                {
+                    // French: comma is decimal separator
+                    input = input.replace(',', '.');
+                }
+
+                double inputValue = Double.parseDouble(input);
+                value = new AtomicValue<>(inputValue, AtomicTypes.FLOATING);
+            }
+            catch (Exception e)
+            {
+                throw new RuntimeError(null, "Expected real number input");
+            }
+        }
+        else if (type.equals(TypeFactory.STRING))
+        {
+            String input = scanner.nextLine();
+            value = new AtomicValue<>(input, AtomicTypes.STRING);
+        }
+        else if (type.equals(TypeFactory.CHAR))
+        {
+            String input = scanner.nextLine().trim();
+
+            if (input.length() != 1)
+            {
+                throw new RuntimeError(null, "Expected single character input");
+            }
+
+            value = new AtomicValue<>(input.charAt(0), AtomicTypes.CHAR);
+        }
+        else if (type.equals(TypeFactory.BOOLEAN))
+        {
+            String input = scanner.nextLine().trim().toLowerCase();
+
+            // Accept multiple formats
+            if (input.equals("1") || input.equals("vrai") || input.equals("true"))
+            {
+                value = new AtomicValue<>(true, AtomicTypes.BOOLEAN);
+            }
+            else if (input.equals("0") || input.equals("faux") || input.equals("false"))
+            {
+                value = new AtomicValue<>(false, AtomicTypes.BOOLEAN);
+            }
+            else
+            {
+                String expectedFormats = Config.getLanguage()
+                        ? "vrai/faux, 1/0"
+                        : "true/false, 1/0";
+                throw new RuntimeError(null,
+                        "Expected boolean input (" + expectedFormats + ")");
+            }
+        }
+        else
+        {
+            throw new RuntimeError(null, "Cannot read value of type: " + type);
+        }
+
+        return value;
+    }
+
+// Then use it in the visitor methods as shown above
 
     /**
      * Execute a function and return its result
@@ -1004,7 +1187,7 @@ public class Interpreter implements Expression.Visitor<Object>, Statement.Visito
     /**
      * Evaluate comparison operations
      */
-    private Object evaluateComparison(io.dream.scanner.TokenType operator,
+    private Object evaluateComparison(TokenType operator,
                                       Object left, Object right, Type type)
     {
         checkNumberOperands(null, left, right);

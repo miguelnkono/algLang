@@ -1,6 +1,6 @@
 Algorithme: fonctions_avancees;
 
-Fonction: max(a, b: entier): entier;
+Fonction: max(a: entier, b: entier): entier;
 Debut:
     si a > b alors:
         retourne a;
@@ -10,7 +10,7 @@ Debut:
 Fin
 FinFonction;
 
-Fonction: min(a, b: entier): entier;
+Fonction: min(a: entier, b: entier): entier;
 Debut:
     si a < b alors:
         retourne a;
