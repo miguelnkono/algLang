@@ -661,13 +661,6 @@ public class Checker implements Expression.Visitor<Type>, Statement.Visitor<Void
         return null;
     }
 
-    // ========================================================================
-    // Continued in next part...
-    // ========================================================================
-    // ========================================================================
-    // EXPRESSION VISITORS
-    // ========================================================================
-
     @Override
     public Type visitBinaryExpression(Expression.Binary expression)
     {
@@ -792,6 +785,11 @@ public class Checker implements Expression.Visitor<Type>, Statement.Visitor<Void
     private Type checkEqualityOperation(Token operator, Type leftType, Type rightType)
     {
         if (leftType.equals(rightType))
+        {
+            return TypeFactory.BOOLEAN;
+        }
+        else if ((leftType.equals(TypeFactory.INTEGER) && rightType.equals(TypeFactory.FLOATING)) ||
+                (leftType.equals(TypeFactory.FLOATING) && rightType.equals(TypeFactory.INTEGER)))
         {
             return TypeFactory.BOOLEAN;
         }

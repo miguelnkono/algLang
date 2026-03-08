@@ -707,12 +707,16 @@ public class Parser
      */
     private Statement ifStatement()
     {
+        return parseIfStatement();
+    }
+
+    private Statement parseIfStatement()
+    {
         Expression condition = expression();
         consume(THEN, Messages.expectThen("condition"));
         consume(COLON, Messages.expectColon("then"));
 
         List<Statement> thenBranch = new ArrayList<>();
-        List<Statement> elseBranch = new ArrayList<>();
 
         // Parse then branch
         while (!check(ENDIF) && !check(ELSEIF) && !check(ELSE) && !isAtEnd())
@@ -720,57 +724,66 @@ public class Parser
             thenBranch.add(statement());
         }
 
-        // Parse else-if and else branches
-        while (match(ELSEIF))
+        List<Statement> elseBranch = new ArrayList<>();
+
+        // Handle else-if: recursively parse as nested if
+        if (match(ELSEIF))
         {
-            Expression elseIfCondition = expression();
-            consume(THEN, Messages.expectThen("else if condition"));
-            consume(COLON, Messages.expectColon("then"));
-
-            List<Statement> elseIfBranch = new ArrayList<>();
-            while (!check(ENDIF) && !check(ELSEIF) && !check(ELSE) && !isAtEnd())
-            {
-                elseIfBranch.add(statement());
-            }
-
-            // Convert else-if to nested if-else
-            elseBranch.add(new Statement.If(elseIfCondition, elseIfBranch, new ArrayList<>()));
-            break; // Process one else-if at a time, nesting will happen recursively
+            // Recursively build the else-if chain
+            Statement nestedIf = parseElseIfChain();
+            elseBranch.add(nestedIf);
         }
-
-        if (match(ELSE))
+        // Handle else clause
+        else if (match(ELSE))
         {
             consume(COLON, Messages.expectColon("else"));
 
             while (!check(ENDIF) && !isAtEnd())
             {
-                if (elseBranch.isEmpty())
-                {
-                    elseBranch.add(statement());
-                }
-                else
-                {
-                    // If we already have an else-if, add to its else branch
-                    Statement lastElseIf = elseBranch.get(elseBranch.size() - 1);
-                    if (lastElseIf instanceof Statement.If)
-                    {
-                        // This is complex - for now just add to main else branch
-                        elseBranch.add(statement());
-                    }
-                    else
-                    {
-                        elseBranch.add(statement());
-                    }
-                }
+                elseBranch.add(statement());
             }
         }
 
-        if (isAtEnd())
+        consume(ENDIF, Messages.expectEndIfBlock());
+
+        return new Statement.If(condition, thenBranch, elseBranch);
+    }
+
+    private Statement parseElseIfChain()
+    {
+        // This is called after ELSEIF has been matched
+        Expression condition = expression();
+        consume(THEN, Messages.expectThen("else if condition"));
+        consume(COLON, Messages.expectColon("then"));
+
+        List<Statement> thenBranch = new ArrayList<>();
+
+        // Parse this else-if's body
+        while (!check(ENDIF) && !check(ELSEIF) && !check(ELSE) && !isAtEnd())
         {
-            throw error(peek(), Messages.ifError());
+            thenBranch.add(statement());
         }
 
-        consume(ENDIF, Messages.expectEndIfBlock());
+        List<Statement> elseBranch = new ArrayList<>();
+
+        // Check for another else-if
+        if (match(ELSEIF))
+        {
+            Statement nestedIf = parseElseIfChain();
+            elseBranch.add(nestedIf);
+        }
+        // Or final else
+        else if (match(ELSE))
+        {
+            consume(COLON, Messages.expectColon("else"));
+
+            while (!check(ENDIF) && !isAtEnd())
+            {
+                elseBranch.add(statement());
+            }
+        }
+
+        // NOTE: Don't consume ENDIF here - it belongs to the outer if statement
 
         return new Statement.If(condition, thenBranch, elseBranch);
     }

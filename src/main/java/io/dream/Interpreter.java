@@ -2,10 +2,12 @@ package io.dream;
 
 import io.dream.ast.Expression;
 import io.dream.ast.Statement;
+import io.dream.config.Config;
 import io.dream.config.Messages;
 import io.dream.environment.Environment;
 import io.dream.error.RuntimeError;
 import io.dream.scanner.Token;
+import io.dream.scanner.TokenType;
 import io.dream.types.*;
 
 import java.util.*;
@@ -208,13 +210,42 @@ public class Interpreter implements Expression.Visitor<Object>, Statement.Visito
         }
         else if (varType.equals(TypeFactory.BOOLEAN))
         {
-            if (scanner.hasNextBoolean())
+            String input = scanner.nextLine().trim();
+
+            // Accept numeric input: 1 = true, 0 = false
+            if (input.equals("1"))
             {
-                value = scanner.nextBoolean();
+                value = new AtomicValue<>(true, AtomicTypes.BOOLEAN);
+            }
+            else if (input.equals("0"))
+            {
+                value = new AtomicValue<>(false, AtomicTypes.BOOLEAN);
+            }
+            // Accept French boolean words
+            else if (input.equalsIgnoreCase("vrai"))
+            {
+                value = new AtomicValue<>(true, AtomicTypes.BOOLEAN);
+            }
+            else if (input.equalsIgnoreCase("faux"))
+            {
+                value = new AtomicValue<>(false, AtomicTypes.BOOLEAN);
+            }
+            // Accept English boolean words
+            else if (input.equalsIgnoreCase("true"))
+            {
+                value = new AtomicValue<>(true, AtomicTypes.BOOLEAN);
+            }
+            else if (input.equalsIgnoreCase("false"))
+            {
+                value = new AtomicValue<>(false, AtomicTypes.BOOLEAN);
             }
             else
             {
-                throw new RuntimeError(statement.variable, "Expected boolean input");
+                String expectedFormats = Config.getLanguage()
+                        ? "vrai/faux, 1/0"
+                        : "true/false, 1/0";
+                throw new RuntimeError(statement.variable,
+                        "Expected boolean input (" + expectedFormats + ")");
             }
         }
 
@@ -583,24 +614,32 @@ public class Interpreter implements Expression.Visitor<Object>, Statement.Visito
 
             case SLASH:
                 checkNumberOperands(expression.operator, left, right);
-                // Check for division by zero
-                if (exprType.equals(TypeFactory.INTEGER))
+
+                // Check actual runtime types to handle type promotion correctly
+                boolean leftIsDouble = left instanceof Double;
+                boolean rightIsDouble = right instanceof Double;
+
+                // If either operand is a double, use floating-point division
+                if (leftIsDouble || rightIsDouble)
                 {
+                    double leftVal = leftIsDouble ? (double) left : ((Integer) left).doubleValue();
+                    double rightVal = rightIsDouble ? (double) right : ((Integer) right).doubleValue();
+
+                    if (rightVal == 0.0)
+                    {
+                        throw new RuntimeError(expression.operator, Messages.divisionByZero());
+                    }
+                    return leftVal / rightVal;
+                }
+                else
+                {
+                    // Both are integers
                     int divisor = (int) right;
                     if (divisor == 0)
                     {
                         throw new RuntimeError(expression.operator, Messages.divisionByZero());
                     }
                     return (int) left / divisor;
-                }
-                else
-                {
-                    int divisor = (int) right;
-                    if (divisor == 0.0)
-                    {
-                        throw new RuntimeError(expression.operator, Messages.divisionByZero());
-                    }
-                    return (double) left / divisor;
                 }
 
             case STAR:
@@ -933,6 +972,11 @@ public class Interpreter implements Expression.Visitor<Object>, Statement.Visito
             return type.zeroValue();
         }
 
+        if (value instanceof Value)
+        {
+            return (Value) value;
+        }
+
         if (type.equals(TypeFactory.INTEGER))
         {
             return new AtomicValue<>((Integer) value, AtomicTypes.INTEGER);
@@ -952,10 +996,6 @@ public class Interpreter implements Expression.Visitor<Object>, Statement.Visito
         else if (type.equals(TypeFactory.BOOLEAN))
         {
             return new AtomicValue<>((Boolean) value, AtomicTypes.BOOLEAN);
-        }
-        else if (value instanceof Value)
-        {
-            return (Value) value;
         }
 
         return type.zeroValue();

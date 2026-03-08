@@ -27,7 +27,7 @@ Debut:
             resultat <- a * b;
             ecrire("Resultat: " + resultat);
         sinon si operation == '/' alors:
-            si b != 0 alors:
+            si b != 0,0 alors:
                 resultat <- a / b;
                 ecrire("Resultat: " + resultat);
             sinon:
