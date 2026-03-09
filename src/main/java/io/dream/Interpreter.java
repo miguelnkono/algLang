@@ -6,11 +6,17 @@ import io.dream.config.Config;
 import io.dream.config.Messages;
 import io.dream.environment.Environment;
 import io.dream.error.RuntimeError;
+import io.dream.natives.FileIO;
 import io.dream.scanner.Token;
 import io.dream.scanner.TokenType;
 import io.dream.types.*;
 
 import java.util.*;
+
+@FunctionalInterface
+interface NativeFunction {
+    Object call(List<Object> arguments);
+}
 
 /**
  * Complete Interpreter for AlgoLang
@@ -23,6 +29,8 @@ public class Interpreter implements Expression.Visitor<Object>, Statement.Visito
 
     // Current environment (changes with scopes)
     private Environment environment;
+
+    private Map<String, NativeFunction> nativeFunctions = new HashMap<>();
 
     // Symbol tables from parser
     private final Map<String, Type> globalSymbolTable;
@@ -59,6 +67,8 @@ public class Interpreter implements Expression.Visitor<Object>, Statement.Visito
         this.structTable = new HashMap<>();
         this.functions = new HashMap<>();
         this.methods = new HashMap<>();
+
+        registerNativeFunctions();
     }
 
     /**
@@ -77,6 +87,78 @@ public class Interpreter implements Expression.Visitor<Object>, Statement.Visito
         this.structTable = structTable != null ? structTable : new HashMap<>();
         this.functions = new HashMap<>();
         this.methods = new HashMap<>();
+
+        registerNativeFunctions();
+    }
+
+    // In Interpreter constructor
+    private void registerNativeFunctions() {
+        // Register file I/O functions as callable from AlgoLang
+        nativeFunctions.put("open", (args) -> {
+            String filename = (String) args.get(0);
+            String mode = (String) args.get(1);
+            return FileIO.open(filename, mode);
+        });
+
+        nativeFunctions.put("close", (args) -> {
+            int handle = (int) args.get(0);
+            FileIO.close(handle);
+            return null; // void function
+        });
+
+        nativeFunctions.put("readLine", (args) -> {
+            int handle = (int) args.get(0);
+            return FileIO.readLine(handle);
+        });
+
+        nativeFunctions.put("writeLine", (args) -> {
+            int handle = (int) args.get(0);
+            String content = (String) args.get(1);
+            FileIO.writeLine(handle, content);
+            return null;
+        });
+
+        nativeFunctions.put("eof", (args) -> {
+            int handle = (int) args.get(0);
+            return FileIO.eof(handle);
+        });
+
+        nativeFunctions.put("readAll", (args) -> {
+            int handle = (int) args.get(0);
+            return FileIO.readAll(handle);
+        });
+
+        nativeFunctions.put("readInt", (args) -> {
+            int handle = (int) args.get(0);
+            return FileIO.readInt(handle);
+        });
+
+        nativeFunctions.put("readReal", (args) -> {
+            int handle = (int) args.get(0);
+            return FileIO.readReal(handle);
+        });
+
+        nativeFunctions.put("write", (args) -> {
+            int handle = (int) args.get(0);
+            String content = (String) args.get(1);
+            FileIO.write(handle, content);
+            return null;
+        });
+
+        nativeFunctions.put("closeAll", (args) -> {
+            FileIO.closeAll();
+            return null;
+        });
+
+        nativeFunctions.put("exists", (args) -> {
+            String filename = (String) args.get(0);
+            return FileIO.exists(filename);
+        });
+
+        nativeFunctions.put("delete", (args) -> {
+            String filename = (String) args.get(0);
+            return FileIO.delete(filename);
+        });
     }
 
     /**
@@ -401,7 +483,7 @@ public class Interpreter implements Expression.Visitor<Object>, Statement.Visito
                 execute(stmt);
             }
         }
-        while (isTruthy(evaluate(statement.condition)));
+        while (!isTruthy(evaluate(statement.condition)));
 
         return null;
     }
@@ -809,6 +891,22 @@ public class Interpreter implements Expression.Visitor<Object>, Statement.Visito
     @Override
     public Object visitCallExpression(Expression.Call expression)
     {
+
+        String functionName = expression.name.lexeme();
+        // Check if it's a native function
+        if (nativeFunctions.containsKey(functionName))
+        {
+            // Evaluate arguments
+            List<Object> args = new ArrayList<>();
+            for (Expression arg : expression.arguments)
+            {
+                args.add(evaluate(arg));
+            }
+
+            // Call native function
+            return nativeFunctions.get(functionName).call(args);
+        }
+
         // Get function declaration
         Statement.FunctionDeclaration function = functions.get(expression.name.lexeme());
 

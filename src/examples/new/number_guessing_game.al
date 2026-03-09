@@ -1,12 +1,14 @@
 Algorithme: jeu_devinette;
 Variables:
-    nombre, essai, tentatives : entier;
+    nbr : entier;
+    essai : entier;
+    tentatives : entier;
     rejouer : booleen;
 Debut:
     rejouer <- vrai;
 
     tant_que (rejouer) faire:
-        nombre <- 42;  // In real game, use random number
+        nbr <- 42;  // In real game, use random number
         tentatives <- 0;
 
         ecrire("=== Jeu de devinette ===");
@@ -17,12 +19,12 @@ Debut:
             lire(essai);
             tentatives <- tentatives + 1;
 
-            si essai < nombre alors:
+            si essai < nbr alors:
                 ecrire("Trop petit!");
-            sinon si essai > nombre alors:
+            sinon si essai > nbr alors:
                 ecrire("Trop grand!");
             finsi
-        jusqu_a (essai == nombre)
+        jusqu_a (essai == nbr);
 
         ecrire("Bravo! Trouve en " + tentatives + " tentatives!");
 
